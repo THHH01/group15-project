@@ -194,6 +194,17 @@ function App() {
               required
             />
 
+            <label htmlFor="vaiTroDangKy">Vai trò</label>
+            <select
+              id="vaiTroDangKy"
+              name="vaiTro"
+              value={formDangKy.vaiTro || 'user'}
+              onChange={handleThayDoiDangKy}
+            >
+              <option value="user">👤 User</option>
+              <option value="admin">👑 Admin</option>
+            </select>
+
                 <button type="submit" disabled={dangKyDangXuLy}>
                   {dangKyDangXuLy ? 'Đang xử lý...' : 'Đăng ký'}
                 </button>

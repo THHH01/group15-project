@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import Profile from './Profile';
+import AdminUserList from './AdminUserList';
 import './HomePage.css';
 
 function HomePage() {
   const [trangHienTai, setTrangHienTai] = useState('trang-chu');
   const [nguoiDung, setNguoiDung] = useState(() => {
     const luuTru = localStorage.getItem('nguoiDung');
-    return luuTru ? JSON.parse(luuTru) : null;
+    const user = luuTru ? JSON.parse(luuTru) : null;
+    console.log('🔍 Thông tin user từ localStorage:', user);
+    return user;
   });
 
   const handleDangXuat = () => {
@@ -19,6 +22,8 @@ function HomePage() {
     switch (trangHienTai) {
       case 'profile':
         return <Profile />;
+      case 'quan-ly-user':
+        return <AdminUserList />;
       case 'trang-chu':
       default:
         return (
@@ -80,6 +85,14 @@ function HomePage() {
             >
               Profile
             </button>
+            {nguoiDung?.vaiTro === 'admin' && (
+              <button 
+                className={trangHienTai === 'quan-ly-user' ? 'nav-btn active' : 'nav-btn'}
+                onClick={() => setTrangHienTai('quan-ly-user')}
+              >
+                👥 Quản lý User
+              </button>
+            )}
           </nav>
 
           <div className="user-menu">
