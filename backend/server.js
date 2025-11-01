@@ -1,7 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const User = require('./models/User');
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/user');
 
 require('dotenv').config();
 const app = express();
@@ -16,28 +17,11 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅ Kết nối MongoDB thành công!'))
   .catch(err => console.error('❌ Lỗi kết nối MongoDB:', err));
 
-// API GET /users
-app.get('/users', async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
-// API POST /users
-app.post('/users', async (req, res) => {
-  try {
-    const newUser = new User({
-      name: req.body.name,
-      email: req.body.email
-    });
-    await newUser.save();
-    res.status(201).json(newUser);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+app.get('/', (_req, res) => {
+  res.json({ thongBao: 'API hoạt động. Vui lòng sử dụng các endpoint /api/auth và /api/users.' });
 });
 
 const PORT = process.env.PORT || 3000;

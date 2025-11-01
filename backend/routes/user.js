@@ -4,7 +4,7 @@ const router = express.Router();
 const { getUsers, addUser } = require('../controllers/userController');
 
 // Định nghĩa route
-router.get('/users', getUsers);
-router.post('/users', addUser);
+router.get('/', getUsers);
+router.post('/', addUser);
 
 module.exports = router;
