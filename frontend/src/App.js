@@ -10,6 +10,7 @@ function App() {
     []
   );
 
+  const [hienThiDangKy, setHienThiDangKy] = useState(false);
   const [formDangKy, setFormDangKy] = useState({ hoTen: '', email: '', matKhau: '' });
   const [formDangNhap, setFormDangNhap] = useState({ email: '', matKhau: '' });
   const [thongBaoDangKy, setThongBaoDangKy] = useState('');
@@ -123,9 +124,36 @@ function App() {
       </header>
 
       <main className="noi-dung-chinh">
-        <section className="khoi-form">
-          <h2>Đăng ký tài khoản</h2>
-          <form className="form" onSubmit={handleDangKy}>
+        <section className="khoi-form-lon">
+          <div className="chuyen-doi-tab">
+            <button
+              type="button"
+              className={!hienThiDangKy ? 'tab-active' : 'tab-inactive'}
+              onClick={() => {
+                setHienThiDangKy(false);
+                setThongBaoDangKy('');
+                setThongBaoDangNhap('');
+              }}
+            >
+              Đăng nhập
+            </button>
+            <button
+              type="button"
+              className={hienThiDangKy ? 'tab-active' : 'tab-inactive'}
+              onClick={() => {
+                setHienThiDangKy(true);
+                setThongBaoDangKy('');
+                setThongBaoDangNhap('');
+              }}
+            >
+              Đăng ký
+            </button>
+          </div>
+
+          {hienThiDangKy ? (
+            <>
+              <h2>Đăng ký tài khoản</h2>
+              <form className="form" onSubmit={handleDangKy}>
             <label htmlFor="hoTen">Họ và tên</label>
             <input
               id="hoTen"
@@ -160,16 +188,16 @@ function App() {
               required
             />
 
-            <button type="submit" disabled={dangKyDangXuLy}>
-              {dangKyDangXuLy ? 'Đang xử lý...' : 'Đăng ký'}
-            </button>
-          </form>
-          {thongBaoDangKy && <div className="thong-bao">{thongBaoDangKy}</div>}
-        </section>
-
-        <section className="khoi-form">
-          <h2>Đăng nhập</h2>
-          <form className="form" onSubmit={handleDangNhap}>
+                <button type="submit" disabled={dangKyDangXuLy}>
+                  {dangKyDangXuLy ? 'Đang xử lý...' : 'Đăng ký'}
+                </button>
+              </form>
+              {thongBaoDangKy && <div className="thong-bao">{thongBaoDangKy}</div>}
+            </>
+          ) : (
+            <>
+              <h2>Đăng nhập</h2>
+              <form className="form" onSubmit={handleDangNhap}>
             <label htmlFor="emailDangNhap">Email</label>
             <input
               id="emailDangNhap"
@@ -192,30 +220,32 @@ function App() {
               required
             />
 
-            <button type="submit" disabled={dangNhapDangXuLy}>
-              {dangNhapDangXuLy ? 'Đang xử lý...' : 'Đăng nhập'}
-            </button>
-          </form>
-          {thongBaoDangNhap && <div className="thong-bao">{thongBaoDangNhap}</div>}
+                <button type="submit" disabled={dangNhapDangXuLy}>
+                  {dangNhapDangXuLy ? 'Đang xử lý...' : 'Đăng nhập'}
+                </button>
+              </form>
+              {thongBaoDangNhap && <div className="thong-bao">{thongBaoDangNhap}</div>}
 
-          {token && (
-            <div className="thong-tin-token">
-              <h3>Token JWT hiện tại</h3>
-              <p className="token">{token}</p>
-              {nguoiDung && (
-                <div className="nguoi-dung">
-                  <h4>Thông tin người dùng</h4>
-                  <ul>
-                    <li>Họ tên: {nguoiDung.hoTen}</li>
-                    <li>Email: {nguoiDung.email}</li>
-                    <li>Vai trò: {nguoiDung.vaiTro}</li>
-                  </ul>
+              {token && (
+                <div className="thong-tin-token">
+                  <h3>Token JWT hiện tại</h3>
+                  <p className="token">{token}</p>
+                  {nguoiDung && (
+                    <div className="nguoi-dung">
+                      <h4>Thông tin người dùng</h4>
+                      <ul>
+                        <li>Họ tên: {nguoiDung.hoTen}</li>
+                        <li>Email: {nguoiDung.email}</li>
+                        <li>Vai trò: {nguoiDung.vaiTro}</li>
+                      </ul>
+                    </div>
+                  )}
+                  <button type="button" className="nut-dang-xuat" onClick={handleDangXuat}>
+                    Đăng xuất & xóa token
+                  </button>
                 </div>
               )}
-              <button type="button" className="nut-dang-xuat" onClick={handleDangXuat}>
-                Đăng xuất & xóa token
-              </button>
-            </div>
+            </>
           )}
         </section>
       </main>
