@@ -1,69 +1,231 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+import './App.css';
+
+const MAC_DINH_API = 'http://localhost:3000';
 
 function App() {
-  const [users, setUsers] = useState([]);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const baseURL = useMemo(
+    () => process.env.REACT_APP_API_URL || MAC_DINH_API,
+    []
+  );
 
-  // Hàm load danh sách user
-  const fetchUsers = async () => {
+  const [formDangKy, setFormDangKy] = useState({ hoTen: '', email: '', matKhau: '' });
+  const [formDangNhap, setFormDangNhap] = useState({ email: '', matKhau: '' });
+  const [thongBaoDangKy, setThongBaoDangKy] = useState('');
+  const [thongBaoDangNhap, setThongBaoDangNhap] = useState('');
+  const [dangKyDangXuLy, setDangKyDangXuLy] = useState(false);
+  const [dangNhapDangXuLy, setDangNhapDangXuLy] = useState(false);
+  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+  const [nguoiDung, setNguoiDung] = useState(() => {
+    const luuTru = localStorage.getItem('nguoiDung');
+    return luuTru ? JSON.parse(luuTru) : null;
+  });
+
+  const client = useMemo(
+    () => axios.create({ baseURL, headers: { 'Content-Type': 'application/json' } }),
+    [baseURL]
+  );
+
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (nguoiDung) {
+      localStorage.setItem('nguoiDung', JSON.stringify(nguoiDung));
+    } else {
+      localStorage.removeItem('nguoiDung');
+    }
+  }, [nguoiDung]);
+
+  const handleThayDoiDangKy = (event) => {
+    const { name, value } = event.target;
+    setFormDangKy((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleThayDoiDangNhap = (event) => {
+    const { name, value } = event.target;
+    setFormDangNhap((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const taoThongBaoLoi = (error) => {
+    const thongBao = error?.response?.data?.thongBao || 'Đã xảy ra lỗi. Vui lòng thử lại.';
+    const chiTiet = error?.response?.data?.chiTiet;
+    return chiTiet ? `${thongBao} (Chi tiết: ${chiTiet})` : thongBao;
+  };
+
+  const handleDangKy = async (event) => {
+    event.preventDefault();
+    setDangKyDangXuLy(true);
+    setThongBaoDangKy('');
+
     try {
-      const res = await axios.get("http://localhost:3000/users");
-      setUsers(res.data);
+      const { data } = await client.post('/api/auth/signup', formDangKy);
+      setThongBaoDangKy(data.thongBao);
+      setFormDangKy({ hoTen: '', email: '', matKhau: '' });
     } catch (error) {
-      console.error("Lỗi tải danh sách:", error);
+      setThongBaoDangKy(taoThongBaoLoi(error));
+    } finally {
+      setDangKyDangXuLy(false);
     }
   };
 
-  // Gọi khi component mount
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const handleDangNhap = async (event) => {
+    event.preventDefault();
+    setDangNhapDangXuLy(true);
+    setThongBaoDangNhap('');
 
-  // Hàm thêm user
-  const addUser = async (e) => {
-    e.preventDefault();
     try {
-      await axios.post("http://localhost:3000/users", { name, email });
-      setName("");
-      setEmail("");
-      fetchUsers(); // tải lại danh sách sau khi thêm
+      const { data } = await client.post('/api/auth/login', formDangNhap);
+      setThongBaoDangNhap(data.thongBao);
+      setToken(data.token);
+      setNguoiDung(data.nguoiDung);
+      setFormDangNhap({ email: '', matKhau: '' });
     } catch (error) {
-      console.error("Lỗi thêm user:", error);
+      setThongBaoDangNhap(taoThongBaoLoi(error));
+    } finally {
+      setDangNhapDangXuLy(false);
+    }
+  };
+
+  const handleDangXuat = async () => {
+    try {
+      await client.post(
+        '/api/auth/logout',
+        {},
+        {
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`
+              }
+            : undefined
+        }
+      );
+    } catch (error) {
+      console.warn('Đăng xuất phía server thất bại hoặc không cần thiết:', error);
+    } finally {
+      setToken('');
+      setNguoiDung(null);
+      setThongBaoDangNhap('Đăng xuất thành công! Token đã được xóa khỏi trình duyệt.');
     }
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Quản lý người dùng</h1>
+    <div className="ung-dung">
+      <header className="tieu-de">
+        <h1>Hệ thống xác thực cơ bản</h1>
+        <p>Đăng ký, đăng nhập và quản lý token JWT phía client.</p>
+      </header>
 
-      <form onSubmit={addUser}>
-        <input
-          type="text"
-          placeholder="Tên"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <button type="submit">Thêm</button>
-      </form>
+      <main className="noi-dung-chinh">
+        <section className="khoi-form">
+          <h2>Đăng ký tài khoản</h2>
+          <form className="form" onSubmit={handleDangKy}>
+            <label htmlFor="hoTen">Họ và tên</label>
+            <input
+              id="hoTen"
+              name="hoTen"
+              type="text"
+              placeholder="Ví dụ: Nguyễn Văn A"
+              value={formDangKy.hoTen}
+              onChange={handleThayDoiDangKy}
+              required
+            />
 
-      <h2>Danh sách người dùng</h2>
-      <ul>
-        {users.map((u, i) => (
-          <li key={i}>
-            {u.name} - {u.email}
-          </li>
-        ))}
-      </ul>
+            <label htmlFor="emailDangKy">Email</label>
+            <input
+              id="emailDangKy"
+              name="email"
+              type="email"
+              placeholder="email@vidu.com"
+              value={formDangKy.email}
+              onChange={handleThayDoiDangKy}
+              required
+            />
+
+            <label htmlFor="matKhauDangKy">Mật khẩu</label>
+            <input
+              id="matKhauDangKy"
+              name="matKhau"
+              type="password"
+              placeholder="Ít nhất 6 ký tự"
+              value={formDangKy.matKhau}
+              onChange={handleThayDoiDangKy}
+              minLength={6}
+              required
+            />
+
+            <button type="submit" disabled={dangKyDangXuLy}>
+              {dangKyDangXuLy ? 'Đang xử lý...' : 'Đăng ký'}
+            </button>
+          </form>
+          {thongBaoDangKy && <div className="thong-bao">{thongBaoDangKy}</div>}
+        </section>
+
+        <section className="khoi-form">
+          <h2>Đăng nhập</h2>
+          <form className="form" onSubmit={handleDangNhap}>
+            <label htmlFor="emailDangNhap">Email</label>
+            <input
+              id="emailDangNhap"
+              name="email"
+              type="email"
+              placeholder="email@vidu.com"
+              value={formDangNhap.email}
+              onChange={handleThayDoiDangNhap}
+              required
+            />
+
+            <label htmlFor="matKhauDangNhap">Mật khẩu</label>
+            <input
+              id="matKhauDangNhap"
+              name="matKhau"
+              type="password"
+              placeholder="Nhập mật khẩu"
+              value={formDangNhap.matKhau}
+              onChange={handleThayDoiDangNhap}
+              required
+            />
+
+            <button type="submit" disabled={dangNhapDangXuLy}>
+              {dangNhapDangXuLy ? 'Đang xử lý...' : 'Đăng nhập'}
+            </button>
+          </form>
+          {thongBaoDangNhap && <div className="thong-bao">{thongBaoDangNhap}</div>}
+
+          {token && (
+            <div className="thong-tin-token">
+              <h3>Token JWT hiện tại</h3>
+              <p className="token">{token}</p>
+              {nguoiDung && (
+                <div className="nguoi-dung">
+                  <h4>Thông tin người dùng</h4>
+                  <ul>
+                    <li>Họ tên: {nguoiDung.hoTen}</li>
+                    <li>Email: {nguoiDung.email}</li>
+                    <li>Vai trò: {nguoiDung.vaiTro}</li>
+                  </ul>
+                </div>
+              )}
+              <button type="button" className="nut-dang-xuat" onClick={handleDangXuat}>
+                Đăng xuất & xóa token
+              </button>
+            </div>
+          )}
+        </section>
+      </main>
+
+      <footer className="chu-thich">
+        <p>
+          Lưu ý: Token được lưu trong <code>localStorage</code>. Hãy xóa token khi không sử dụng để đảm bảo an toàn.
+        </p>
+        <p className="duong-dan-api">API backend: {baseURL}</p>
+      </footer>
     </div>
   );
 }
