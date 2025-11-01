@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['user', 'admin'],
       default: 'user'
+    },
+    avatar: {
+      type: String,
+      default: ''
+    },
+    resetPasswordToken: {
+      type: String,
+      default: ''
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null
     }
   },
   {
@@ -54,6 +66,8 @@ userSchema.methods.kiemTraMatKhau = function kiemTraMatKhau(matKhauNhap) {
 userSchema.methods.toJSON = function toJSON() {
   const userObject = this.toObject();
   delete userObject.matKhau;
+  delete userObject.resetPasswordToken;
+  delete userObject.resetPasswordExpires;
   return userObject;
 };
 
