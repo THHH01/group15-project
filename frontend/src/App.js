@@ -120,7 +120,6 @@ function App() {
     <div className="ung-dung">
       <header className="tieu-de">
         <h1>Hệ thống xác thực cơ bản</h1>
-        <p>Đăng ký, đăng nhập và quản lý token JWT phía client.</p>
       </header>
 
       <main className="noi-dung-chinh">
@@ -249,13 +248,6 @@ function App() {
           )}
         </section>
       </main>
-
-      <footer className="chu-thich">
-        <p>
-          Lưu ý: Token được lưu trong <code>localStorage</code>. Hãy xóa token khi không sử dụng để đảm bảo an toàn.
-        </p>
-        <p className="duong-dan-api">API backend: {baseURL}</p>
-      </footer>
     </div>
   );
 }
