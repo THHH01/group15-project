@@ -231,41 +231,6 @@ function App() {
                 </button>
               </form>
               {thongBaoDangNhap && <div className="thong-bao">{thongBaoDangNhap}</div>}
-
-              {token && (
-                <div className="thong-tin-token">
-                  <h3>Token JWT hiện tại</h3>
-                  <p className="token">{token}</p>
-                  {nguoiDung && (
-                    <div className="nguoi-dung">
-                      <h4>Thông tin người dùng</h4>
-                      <ul>
-                        <li>Họ tên: {nguoiDung.hoTen}</li>
-                        <li>Email: {nguoiDung.email}</li>
-                        <li>Vai trò: {nguoiDung.vaiTro}</li>
-                      </ul>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                    <button 
-                      type="button" 
-                      className="nut-dang-xuat" 
-                      onClick={() => setHienThiProfile(true)}
-                      style={{ flex: 1 }}
-                    >
-                      Xem Profile
-                    </button>
-                    <button 
-                      type="button" 
-                      className="nut-dang-xuat" 
-                      onClick={handleDangXuat}
-                      style={{ flex: 1 }}
-                    >
-                      Đăng xuất
-                    </button>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </section>

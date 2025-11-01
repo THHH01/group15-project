@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
+const profileRoutes = require('./routes/profile');
 
 require('dotenv').config();
 const app = express();
@@ -19,9 +20,10 @@ mongoose.connect(MONGODB_URI)
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/profile', profileRoutes);
 
 app.get('/', (_req, res) => {
-  res.json({ thongBao: 'API hoạt động. Vui lòng sử dụng các endpoint /api/auth và /api/users.' });
+  res.json({ thongBao: 'API hoạt động. Vui lòng sử dụng các endpoint /api/auth, /api/users và /api/profile.' });
 });
 
 const PORT = process.env.PORT || 3000;
