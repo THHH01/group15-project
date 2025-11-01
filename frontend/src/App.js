@@ -119,7 +119,7 @@ function App() {
   return (
     <div className="ung-dung">
       <header className="tieu-de">
-        <h1>Hệ thống xác thực cơ bản</h1>
+        <h1>Đăng Nhập Và Đăng Ký Tài Khoản</h1>
       </header>
 
       <main className="noi-dung-chinh">
