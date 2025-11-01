@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import './App.css';
+import HomePage from './components/HomePage';
 
 const MAC_DINH_API = 'http://localhost:3000';
 
@@ -116,6 +117,12 @@ function App() {
     }
   };
 
+  // Nếu đã đăng nhập (có token), hiển thị trang chủ
+  if (token) {
+    return <HomePage />;
+  }
+
+  // Nếu chưa đăng nhập, hiển thị form đăng ký/đăng nhập
   return (
     <div className="ung-dung">
       <header className="tieu-de">
@@ -224,31 +231,12 @@ function App() {
                 </button>
               </form>
               {thongBaoDangNhap && <div className="thong-bao">{thongBaoDangNhap}</div>}
-
-              {token && (
-                <div className="thong-tin-token">
-                  <h3>Token JWT hiện tại</h3>
-                  <p className="token">{token}</p>
-                  {nguoiDung && (
-                    <div className="nguoi-dung">
-                      <h4>Thông tin người dùng</h4>
-                      <ul>
-                        <li>Họ tên: {nguoiDung.hoTen}</li>
-                        <li>Email: {nguoiDung.email}</li>
-                        <li>Vai trò: {nguoiDung.vaiTro}</li>
-                      </ul>
-                    </div>
-                  )}
-                  <button type="button" className="nut-dang-xuat" onClick={handleDangXuat}>
-                    Đăng xuất & xóa token
-                  </button>
-                </div>
-              )}
             </>
           )}
         </section>
       </main>
     </div>
+    
   );
 }
 
