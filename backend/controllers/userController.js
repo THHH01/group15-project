@@ -45,4 +45,30 @@ const addUser = async (req, res) => {
   }
 };
 
-module.exports = { getUsers, addUser };
+// DELETE /users/:id - Xóa người dùng (Admin hoặc chính user đó)
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const nguoiDung = await User.findById(id);
+    if (!nguoiDung) {
+      return res.status(404).json({ thongBao: 'Không tìm thấy người dùng.' });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      thongBao: 'Xóa người dùng thành công',
+      nguoiDungDaXoa: {
+        id: nguoiDung._id,
+        hoTen: nguoiDung.hoTen,
+        email: nguoiDung.email
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi xóa người dùng:', error);
+    return res.status(500).json({ thongBao: 'Không thể xóa người dùng', chiTiet: error.message });
+  }
+};
+
+module.exports = { getUsers, addUser, deleteUser };
