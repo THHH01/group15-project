@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import './App.css';
+import HomePage from './components/HomePage';
 
 const MAC_DINH_API = 'http://localhost:3000';
 
@@ -116,6 +117,12 @@ function App() {
     }
   };
 
+  // Nếu đã đăng nhập (có token), hiển thị trang chủ
+  if (token) {
+    return <HomePage />;
+  }
+
+  // Nếu chưa đăng nhập, hiển thị form đăng ký/đăng nhập
   return (
     <div className="ung-dung">
       <header className="tieu-de">
@@ -239,9 +246,24 @@ function App() {
                       </ul>
                     </div>
                   )}
-                  <button type="button" className="nut-dang-xuat" onClick={handleDangXuat}>
-                    Đăng xuất & xóa token
-                  </button>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                    <button 
+                      type="button" 
+                      className="nut-dang-xuat" 
+                      onClick={() => setHienThiProfile(true)}
+                      style={{ flex: 1 }}
+                    >
+                      Xem Profile
+                    </button>
+                    <button 
+                      type="button" 
+                      className="nut-dang-xuat" 
+                      onClick={handleDangXuat}
+                      style={{ flex: 1 }}
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
                 </div>
               )}
             </>
@@ -249,6 +271,7 @@ function App() {
         </section>
       </main>
     </div>
+    
   );
 }
 
