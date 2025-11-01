@@ -1,0 +1,77 @@
+{
+  "info": {
+    "_postman_id": "e7d9a8c3-2f4b-4e6d-8a1c-9c5b7f3e4d2a",
+    "name": "Profile API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Bộ request kiểm thử API quản lý thông tin cá nhân. Yêu cầu token JWT từ đăng nhập."
+  },
+  "item": [
+    {
+      "name": "Xem thông tin cá nhân",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cập nhật thông tin cá nhân",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hoTen\": \"Nguyen Van B\",\n  \"email\": \"b@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "profile"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "auth_token",
+      "value": "paste_token_here"
+    }
+  ]
+}
+
