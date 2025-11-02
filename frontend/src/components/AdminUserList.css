@@ -1,0 +1,295 @@
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.admin-header {
+  margin-bottom: 32px;
+}
+
+.admin-title {
+  font-size: 32px;
+  color: #0c4a6e;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-title .icon {
+  font-size: 36px;
+}
+
+.admin-info-panel {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.08);
+}
+
+.welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.welcome-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.welcome-content {
+  flex: 1;
+}
+
+.welcome-title {
+  font-size: 24px;
+  color: #0c4a6e;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.welcome-subtitle {
+  font-size: 16px;
+  color: #475569;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.welcome-subtitle strong {
+  color: #0369a1;
+  font-weight: 700;
+}
+
+.info-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #7dd3fc, transparent);
+  margin: 20px 0;
+}
+
+.last-update {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.update-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.update-text {
+  font-style: italic;
+}
+
+.admin-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.dang-tai {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #64748b;
+}
+
+.thong-bao {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.thong-bao.thanh-cong {
+  background-color: #d1fae5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+}
+
+.thong-bao.loi {
+  background-color: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+}
+
+.table-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-table thead {
+  background-color: #0c4a6e;
+  color: #ffffff;
+}
+
+.user-table th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.user-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.user-table tbody tr.current-user {
+  background-color: #f0f9ff;
+}
+
+.user-table td {
+  padding: 16px;
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px !important;
+  color: #64748b;
+  font-style: italic;
+}
+
+.user-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.badge-current {
+  background-color: #bae6fd;
+  color: #0369a1;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-admin {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-user {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.btn-delete {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background-color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.btn-delete:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-delete:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 16px;
+  }
+
+  .admin-title {
+    font-size: 24px;
+  }
+
+  .admin-info-panel {
+    padding: 20px;
+  }
+
+  .welcome-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .welcome-icon {
+    font-size: 40px;
+  }
+
+  .welcome-title {
+    font-size: 20px;
+  }
+
+  .welcome-subtitle {
+    font-size: 14px;
+  }
+
+  .last-update {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .user-table {
+    min-width: 700px;
+  }
+
+  .user-table th,
+  .user-table td {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+
+  .btn-delete {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
