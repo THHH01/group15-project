@@ -8,7 +8,6 @@ function HomePage() {
   const [nguoiDung, setNguoiDung] = useState(() => {
     const luuTru = localStorage.getItem('nguoiDung');
     const user = luuTru ? JSON.parse(luuTru) : null;
-    console.log('🔍 Thông tin user từ localStorage:', user);
     return user;
   });
 
@@ -36,7 +35,17 @@ function HomePage() {
               
               <div className="thong-tin-nhanh">
                 <div className="info-box">
-                  <i className="icon">👤</i>
+                  {nguoiDung?.avatar ? (
+                    <img 
+                      src={nguoiDung.avatar} 
+                      alt="Avatar" 
+                      className="avatar-icon"
+                    />
+                  ) : (
+                    <div className="avatar-placeholder-icon">
+                      {nguoiDung?.hoTen?.charAt(0).toUpperCase() || '👤'}
+                    </div>
+                  )}
                   <div>
                     <h3>Thông tin cá nhân</h3>
                     <p>Email: {nguoiDung?.email}</p>

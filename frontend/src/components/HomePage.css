@@ -157,6 +157,30 @@
   font-size: 48px;
 }
 
+.info-box .avatar-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #0284c7;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
+
+.info-box .avatar-placeholder-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  border: 3px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+}
+
 .info-box h3 {
   font-size: 20px;
   color: #0c4a6e;

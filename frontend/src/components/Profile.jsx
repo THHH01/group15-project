@@ -16,6 +16,11 @@ function Profile() {
     email: ''
   });
 
+  // State cho avatar upload
+  const [dangUploadAvatar, setDangUploadAvatar] = useState(false);
+  const [fileAvatar, setFileAvatar] = useState(null);
+  const [previewAvatar, setPreviewAvatar] = useState(null);
+
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -112,6 +117,94 @@ function Profile() {
     setThongBao({ loai: '', noiDung: '' });
   };
 
+  // Xử lý chọn file avatar
+  const handleChonAvatar = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Kiểm tra loại file
+    if (!file.type.startsWith('image/')) {
+      setThongBao({ loai: 'loi', noiDung: 'Vui lòng chọn file ảnh (jpg, png, gif, webp).' });
+      return;
+    }
+
+    // Kiểm tra kích thước (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setThongBao({ loai: 'loi', noiDung: 'Kích thước ảnh tối đa 5MB.' });
+      return;
+    }
+
+    setFileAvatar(file);
+
+    // Tạo preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewAvatar(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload avatar lên server
+  const handleUploadAvatar = async () => {
+    if (!fileAvatar) {
+      setThongBao({ loai: 'loi', noiDung: 'Vui lòng chọn ảnh trước.' });
+      return;
+    }
+
+    setDangUploadAvatar(true);
+    setThongBao({ loai: '', noiDung: '' });
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', fileAvatar);
+
+      const response = await axios.post(
+        `${API_URL}/api/upload/avatar`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      // Cập nhật avatar trong state
+      setNguoiDung((prev) => ({
+        ...prev,
+        avatar: response.data.avatar
+      }));
+
+      // Cập nhật localStorage
+      const storedUser = localStorage.getItem('nguoiDung');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        userData.avatar = response.data.avatar;
+        localStorage.setItem('nguoiDung', JSON.stringify(userData));
+      }
+
+      setThongBao({ loai: 'thanh-cong', noiDung: response.data.thongBao });
+      setFileAvatar(null);
+      setPreviewAvatar(null);
+
+      // Reload trang sau 1 giây để cập nhật avatar ở HomePage
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      const message = error?.response?.data?.thongBao || 'Không thể upload avatar. Vui lòng thử lại.';
+      setThongBao({ loai: 'loi', noiDung: message });
+    } finally {
+      setDangUploadAvatar(false);
+    }
+  };
+
+  // Hủy chọn avatar
+  const handleHuyChonAvatar = () => {
+    setFileAvatar(null);
+    setPreviewAvatar(null);
+  };
+
   if (dangTaiDuLieu) {
     return (
       <div className="profile-container">
@@ -143,6 +236,58 @@ function Profile() {
         {thongBao.noiDung && (
           <div className={`thong-bao ${thongBao.loai}`}>{thongBao.noiDung}</div>
         )}
+
+        {/* Avatar Section */}
+        <div className="avatar-section">
+          <div className="avatar-display">
+            {previewAvatar ? (
+              <img src={previewAvatar} alt="Preview" className="avatar-img preview" />
+            ) : nguoiDung.avatar ? (
+              <img src={nguoiDung.avatar} alt="Avatar" className="avatar-img" />
+            ) : (
+              <div className="avatar-placeholder">
+                {nguoiDung.hoTen?.charAt(0).toUpperCase() || '👤'}
+              </div>
+            )}
+          </div>
+
+          <div className="avatar-actions">
+            <input
+              type="file"
+              id="avatar-input"
+              accept="image/*"
+              onChange={handleChonAvatar}
+              style={{ display: 'none' }}
+            />
+            
+            {!fileAvatar ? (
+              <label htmlFor="avatar-input" className="btn btn-upload">
+                📷 Chọn ảnh
+              </label>
+            ) : (
+              <div className="avatar-upload-controls">
+                <button
+                  type="button"
+                  className="btn btn-success btn-sm"
+                  onClick={handleUploadAvatar}
+                  disabled={dangUploadAvatar}
+                >
+                  {dangUploadAvatar ? '⏳ Đang upload...' : '✅ Upload'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleHuyChonAvatar}
+                  disabled={dangUploadAvatar}
+                >
+                  Hủy
+                </button>
+              </div>
+            )}
+            
+            <p className="avatar-hint">Tối đa 5MB (jpg, png, gif, webp)</p>
+          </div>
+        </div>
 
         {!dangChinhSua ? (
           <div className="thong-tin-xem">

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import './App.css';
 import HomePage from './components/HomePage';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 
 const MAC_DINH_API = 'http://localhost:3000';
 
@@ -12,6 +14,7 @@ function App() {
   );
 
   const [hienThiDangKy, setHienThiDangKy] = useState(false);
+  const [hienThiQuenMatKhau, setHienThiQuenMatKhau] = useState(false);
   const [formDangKy, setFormDangKy] = useState({ hoTen: '', email: '', matKhau: '' });
   const [formDangNhap, setFormDangNhap] = useState({ email: '', matKhau: '' });
   const [thongBaoDangKy, setThongBaoDangKy] = useState('');
@@ -117,9 +120,23 @@ function App() {
     }
   };
 
+  // Kiểm tra xem URL có chứa token reset password không
+  const urlParams = new URLSearchParams(window.location.search);
+  const resetToken = urlParams.get('token');
+
+  // Nếu có reset token, hiển thị trang Reset Password
+  if (resetToken) {
+    return <ResetPassword />;
+  }
+
   // Nếu đã đăng nhập (có token), hiển thị trang chủ
   if (token) {
     return <HomePage />;
+  }
+
+  // Nếu đang hiển thị form Quên mật khẩu
+  if (hienThiQuenMatKhau) {
+    return <ForgotPassword onBack={() => setHienThiQuenMatKhau(false)} />;
   }
 
   // Nếu chưa đăng nhập, hiển thị form đăng ký/đăng nhập
@@ -236,6 +253,25 @@ function App() {
               onChange={handleThayDoiDangNhap}
               required
             />
+
+            <div style={{ textAlign: 'right', marginBottom: '12px' }}>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => setHienThiQuenMatKhau(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#0284c7',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: '0'
+                }}
+              >
+                Quên mật khẩu?
+              </button>
+            </div>
 
                 <button type="submit" disabled={dangNhapDangXuLy}>
                   {dangNhapDangXuLy ? 'Đang xử lý...' : 'Đăng nhập'}
