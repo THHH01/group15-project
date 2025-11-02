@@ -128,6 +128,13 @@ CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 ### Upload
 - `POST /api/upload/avatar` - Upload avatar lên Cloudinary
 
+### Roles & Permissions (Admin/Moderator) ⭐ NEW
+- `GET /api/roles` - Lấy danh sách users theo role/status (Admin, Moderator)
+- `GET /api/roles/thong-ke` - Thống kê users theo role và status (Admin, Moderator)
+- `PUT /api/roles/:id/vai-tro` - Cập nhật vai trò user (Admin only)
+- `PUT /api/roles/:id/trang-thai` - Cập nhật trạng thái user (Admin, Moderator)
+- `PUT /api/roles/:id/quyen-han` - Cập nhật quyền hạn custom (Admin only)
+
 ---
 
 ## 🧪 Testing với Postman
@@ -137,10 +144,22 @@ Import các collection files từ `backend/postman/`:
 1. `authentication.postman_collection.json` - Test authentication APIs
 2. `admin-users.postman_collection.json` - Test admin features
 3. `advanced-features.postman_collection.json` - Test advanced features
-4. `refresh-token.postman_collection.json` - Test refresh token & session management
+4. `rbac.postman_collection.json` - Test RBAC (User, Moderator, Admin)
 
 Tạo **Environment** trong Postman với:
 - `base_url` = `http://localhost:3000`
+
+### Seed Data
+Chạy script để tạo dữ liệu mẫu:
+```bash
+cd backend
+node scripts/seedUsers.js
+```
+
+Tài khoản mẫu:
+- **Admin:** admin@example.com / 123456
+- **Moderator:** moderator@example.com / 123456
+- **User:** user@example.com / 123456
 
 ---
 
@@ -165,13 +184,24 @@ Tạo **Environment** trong Postman với:
 - ✅ Đổi mật khẩu với token reset
 - ✅ Upload Avatar (Cloudinary)
 
-### Hoạt động 5: Refresh Token & Session Management ⭐ NEW
+### Hoạt động 5: Refresh Token & Session Management
 - ✅ Access Token (thời hạn ngắn - 15 phút)
 - ✅ Refresh Token (thời hạn dài - 7 ngày)
 - ✅ API `/auth/refresh` - Làm mới token tự động
 - ✅ Token Rotation - Refresh token được thay mới sau mỗi lần sử dụng
 - ✅ Revoke Token - Hủy token khi logout
 - ✅ Frontend tự động refresh token khi hết hạn (axios interceptor)
+
+### Hoạt động 6: Advanced RBAC (Role-Based Access Control) ⭐ NEW
+- ✅ 3 vai trò: User, Moderator, Admin
+- ✅ Trạng thái tài khoản: Active, Suspended, Banned
+- ✅ Quyền hạn tùy chỉnh (permissions array)
+- ✅ Middleware `kiemTraVaiTro()` - Kiểm tra nhiều roles
+- ✅ Middleware `kiemTraQuyenHan()` - Kiểm tra permissions cụ thể
+- ✅ Middleware `kiemTraTrangThai()` - Kiểm tra trạng thái tài khoản
+- ✅ API quản lý vai trò, trạng thái, quyền hạn
+- ✅ Frontend hiển thị chức năng theo role (Admin/Moderator có thể quản lý users)
+- ✅ Moderator có thể xem danh sách và khóa User (không khóa được Admin/Moderator)
 
 ---
 
@@ -180,7 +210,9 @@ Tạo **Environment** trong Postman với:
 - Mật khẩu được mã hóa bằng bcrypt
 - JWT Access Token (15 phút) + Refresh Token (7 ngày)
 - Token Rotation - Refresh token tự động đổi mới
-- Middleware RBAC phân quyền
+- Advanced RBAC - Phân quyền theo vai trò (User, Moderator, Admin) và permissions
+- Kiểm tra trạng thái tài khoản (Active, Suspended, Banned)
+- Moderator không thể khóa Admin/Moderator khác
 - Reset password token có thời hạn (1 giờ)
 - Axios interceptor tự động refresh token khi hết hạn
 - CORS được cấu hình đúng

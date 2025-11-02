@@ -24,8 +24,17 @@ const userSchema = new mongoose.Schema(
     },
     vaiTro: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'moderator', 'admin'],
       default: 'user'
+    },
+    trangThai: {
+      type: String,
+      enum: ['active', 'suspended', 'banned'],
+      default: 'active'
+    },
+    quyenHan: {
+      type: [String],
+      default: []
     },
     avatar: {
       type: String,
@@ -69,6 +78,29 @@ userSchema.methods.toJSON = function toJSON() {
   delete userObject.resetPasswordToken;
   delete userObject.resetPasswordExpires;
   return userObject;
+};
+
+// Method kiểm tra quyền hạn
+userSchema.methods.coQuyen = function (quyen) {
+  if (this.vaiTro === 'admin') return true; // Admin có tất cả quyền
+  return this.quyenHan.includes(quyen);
+};
+
+// Static method lấy quyền mặc định theo vai trò
+userSchema.statics.layQuyenMacDinh = function (vaiTro) {
+  const quyenTheoVaiTro = {
+    user: ['xem_profile', 'cap_nhat_profile', 'upload_avatar'],
+    moderator: [
+      'xem_profile',
+      'cap_nhat_profile',
+      'upload_avatar',
+      'xem_danh_sach_user',
+      'khoa_user',
+      'xoa_bai_viet'
+    ],
+    admin: ['*'] // Tất cả quyền
+  };
+  return quyenTheoVaiTro[vaiTro] || quyenTheoVaiTro.user;
 };
 
 module.exports = mongoose.model('User', userSchema);

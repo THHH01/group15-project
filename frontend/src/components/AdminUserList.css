@@ -203,9 +203,30 @@
   color: #92400e;
 }
 
+.badge-moderator {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+
 .badge-user {
   background-color: #dbeafe;
   color: #1e40af;
+}
+
+/* Status badges */
+.badge-status-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-status-suspended {
+  background-color: #fed7aa;
+  color: #92400e;
+}
+
+.badge-status-banned {
+  background-color: #fecaca;
+  color: #991b1b;
 }
 
 .btn-delete {
