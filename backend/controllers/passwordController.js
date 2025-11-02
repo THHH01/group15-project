@@ -3,25 +3,31 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
 
-// Cấu hình email transporter (cho môi trường dev, dùng Gmail hoặc fake SMTP)
+// Cấu hình email transporter với Gmail SMTP
 const taoEmailTransporter = () => {
-  // Trong production, dùng Gmail, SendGrid, hoặc dịch vụ email khác
-  // Hiện tại dùng Ethereal Email cho testing (fake SMTP)
-  
   const emailUser = process.env.EMAIL_USER;
   const emailPass = process.env.EMAIL_PASS;
   
   if (!emailUser || !emailPass) {
     console.warn('⚠️ Chưa cấu hình EMAIL_USER và EMAIL_PASS trong .env');
+    console.warn('💡 Hướng dẫn cấu hình Gmail:');
+    console.warn('   1. Bật xác thực 2 bước: https://myaccount.google.com/security');
+    console.warn('   2. Tạo App Password: https://myaccount.google.com/apppasswords');
+    console.warn('   3. Thêm vào .env: EMAIL_USER=your-email@gmail.com và EMAIL_PASS=app-password');
     console.warn('💡 Sử dụng console.log để hiển thị link reset password thay vì gửi email thực');
     return null;
   }
 
+  // Cấu hình Gmail SMTP
   return nodemailer.createTransport({
-    service: 'gmail', // Hoặc 'smtp.ethereal.email' cho testing
+    service: 'gmail',
     auth: {
       user: emailUser,
-      pass: emailPass
+      pass: emailPass // App Password (16 ký tự, không có khoảng trắng)
+    },
+    // Cấu hình bổ sung cho Gmail
+    tls: {
+      rejectUnauthorized: false // Cho phép self-signed certificates (dev only)
     }
   });
 };
@@ -87,42 +93,117 @@ const quenMatKhau = async (req, res) => {
       });
     }
 
-    // Gửi email thực
+    // Gửi email thực qua Gmail SMTP
     try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+      console.log('📧 Đang gửi email đến:', nguoiDung.email);
+      
+      const mailOptions = {
+        from: `"Hệ thống Quản lý - Nhóm 15" <${process.env.EMAIL_USER}>`,
         to: nguoiDung.email,
-        subject: 'Đặt lại mật khẩu - Hệ thống Quản lý',
+        subject: '🔐 Đặt lại mật khẩu - Hệ thống Quản lý',
         html: `
-          <h2>Yêu cầu đặt lại mật khẩu</h2>
-          <p>Xin chào <strong>${nguoiDung.hoTen}</strong>,</p>
-          <p>Bạn đã yêu cầu đặt lại mật khẩu. Nhấn vào link bên dưới để tiếp tục:</p>
-          <a href="${resetUrl}" style="
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #0284c7;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 16px 0;
-          ">Đặt lại mật khẩu</a>
-          <p>Hoặc copy link này vào trình duyệt:</p>
-          <p style="color: #64748b;">${resetUrl}</p>
-          <p><strong>Link này sẽ hết hạn sau 1 giờ.</strong></p>
-          <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
-          <hr style="margin: 24px 0; border: none; border-top: 1px solid #e2e8f0;">
-          <p style="color: #64748b; font-size: 14px;">© 2025 Hệ thống Quản lý - Nhóm 15</p>
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+              .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden; }
+              .header { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; padding: 32px 24px; text-align: center; }
+              .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+              .content { padding: 32px 24px; }
+              .greeting { font-size: 18px; color: #1e293b; margin-bottom: 16px; }
+              .message { font-size: 16px; color: #475569; line-height: 1.6; margin-bottom: 24px; }
+              .button-container { text-align: center; margin: 32px 0; }
+              .button { display: inline-block; padding: 14px 32px; background-color: #0284c7; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(2, 132, 199, 0.3); transition: all 0.3s; }
+              .button:hover { background-color: #0369a1; box-shadow: 0 6px 8px rgba(2, 132, 199, 0.4); }
+              .link-box { background-color: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin: 24px 0; word-break: break-all; }
+              .link-text { color: #0369a1; font-size: 14px; margin: 0; }
+              .warning { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 4px; }
+              .warning-text { color: #92400e; font-size: 14px; margin: 0; font-weight: 600; }
+              .footer { background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0; }
+              .footer-text { color: #64748b; font-size: 13px; margin: 4px 0; }
+              .icon { font-size: 48px; margin-bottom: 16px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="icon">🔐</div>
+                <h1>Đặt lại mật khẩu</h1>
+              </div>
+              <div class="content">
+                <p class="greeting">Xin chào <strong>${nguoiDung.hoTen || nguoiDung.email.split('@')[0]}</strong>,</p>
+                <p class="message">
+                  Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. 
+                  Nhấn vào nút bên dưới để tiếp tục:
+                </p>
+                <div class="button-container">
+                  <a href="${resetUrl}" class="button">Đặt lại mật khẩu ngay</a>
+                </div>
+                <p class="message">Hoặc copy link này vào trình duyệt:</p>
+                <div class="link-box">
+                  <p class="link-text">${resetUrl}</p>
+                </div>
+                <div class="warning">
+                  <p class="warning-text">⏰ Link này sẽ hết hạn sau 1 giờ (${new Date(expiryTime).toLocaleString('vi-VN')})</p>
+                </div>
+                <p class="message">
+                  Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này. 
+                  Mật khẩu của bạn sẽ không thay đổi.
+                </p>
+              </div>
+              <div class="footer">
+                <p class="footer-text"><strong>Hệ thống Quản lý - Nhóm 15</strong></p>
+                <p class="footer-text">© 2025 All rights reserved</p>
+                <p class="footer-text">📧 ${process.env.EMAIL_USER}</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+        // Text version cho email clients không hỗ trợ HTML
+        text: `
+Xin chào ${nguoiDung.hoTen || nguoiDung.email.split('@')[0]},
+
+Bạn đã yêu cầu đặt lại mật khẩu. Truy cập link sau để tiếp tục:
+${resetUrl}
+
+Link này sẽ hết hạn sau 1 giờ (${new Date(expiryTime).toLocaleString('vi-VN')}).
+
+Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+
+---
+Hệ thống Quản lý - Nhóm 15
+© 2025
         `
-      });
+      };
+
+      await transporter.sendMail(mailOptions);
+      
+      console.log('✅ Email đã được gửi thành công đến:', nguoiDung.email);
 
       return res.status(200).json({ 
-        thongBao: 'Link reset mật khẩu đã được gửi đến email của bạn.' 
+        thongBao: 'Link reset mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư (kể cả thư mục Spam).',
+        email: nguoiDung.email
       });
     } catch (emailError) {
-      console.error('Lỗi gửi email:', emailError);
+      console.error('❌ Lỗi gửi email:', emailError);
+      console.error('Chi tiết lỗi:', emailError.message);
+      
+      // Log thêm thông tin để debug
+      if (emailError.code === 'EAUTH') {
+        console.error('💡 Lỗi xác thực Gmail. Hãy kiểm tra:');
+        console.error('   - EMAIL_USER có đúng không?');
+        console.error('   - EMAIL_PASS có phải App Password (16 ký tự) không?');
+        console.error('   - Đã bật xác thực 2 bước chưa?');
+      }
+      
       return res.status(500).json({ 
-        thongBao: 'Không thể gửi email. Vui lòng thử lại sau.',
-        chiTiet: emailError.message 
+        thongBao: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email hoặc thử lại sau.',
+        chiTiet: emailError.message,
+        code: emailError.code
       });
     }
 
