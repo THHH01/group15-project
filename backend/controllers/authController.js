@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
+const { logActivitySimple } = require('../middleware/activityLogger');
 
 const taoPayloadToken = (user) => ({
   id: user._id,
@@ -58,6 +59,12 @@ const dangKy = async (req, res) => {
       vaiTro: vaiTro === 'admin' ? 'admin' : 'user'
     });
 
+    // Ghi log
+    await logActivitySimple(req, 'dang_ky', 'thanh_cong', `Đăng ký tài khoản: ${email}`, {
+      userId: nguoiDung._id,
+      email: nguoiDung.email
+    });
+
     return res.status(201).json({
       thongBao: 'Đăng ký thành công!',
       nguoiDung: nguoiDung.toJSON()
@@ -78,17 +85,34 @@ const dangNhap = async (req, res) => {
 
     const nguoiDung = await User.findOne({ email: email.toLowerCase() });
     if (!nguoiDung) {
+      // Ghi log đăng nhập thất bại
+      await logActivitySimple(req, 'dang_nhap_that_bai', 'that_bai', `Đăng nhập thất bại: Email không tồn tại (${email})`, {
+        email,
+        reason: 'email_not_found'
+      });
       return res.status(401).json({ thongBao: 'Email hoặc mật khẩu không chính xác.' });
     }
 
     const hopLe = await nguoiDung.kiemTraMatKhau(matKhau);
     if (!hopLe) {
+      // Ghi log đăng nhập thất bại
+      await logActivitySimple(req, 'dang_nhap_that_bai', 'that_bai', `Đăng nhập thất bại: Sai mật khẩu (${email})`, {
+        email,
+        userId: nguoiDung._id,
+        reason: 'wrong_password'
+      });
       return res.status(401).json({ thongBao: 'Email hoặc mật khẩu không chính xác.' });
     }
 
     // Tạo Access Token và Refresh Token
     const accessToken = taoAccessToken(nguoiDung);
     const refreshToken = await taoRefreshToken(nguoiDung._id, req);
+
+    // Ghi log đăng nhập thành công
+    await logActivitySimple(req, 'dang_nhap', 'thanh_cong', `Đăng nhập thành công: ${email}`, {
+      userId: nguoiDung._id,
+      email: nguoiDung.email
+    });
 
     return res.status(200).json({
       thongBao: 'Đăng nhập thành công!',
@@ -117,6 +141,12 @@ const dangXuat = async (req, res) => {
     // Nếu có userId từ middleware, hủy tất cả token của user
     if (req.nguoiDung?.id) {
       await RefreshToken.huyTatCaTokenCuaUser(req.nguoiDung.id);
+      
+      // Ghi log đăng xuất
+      await logActivitySimple(req, 'dang_xuat', 'thanh_cong', `Đăng xuất: ${req.nguoiDung.email}`, {
+        userId: req.nguoiDung.id,
+        email: req.nguoiDung.email
+      });
     }
 
     return res.status(200).json({ 

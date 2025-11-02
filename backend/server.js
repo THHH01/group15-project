@@ -7,6 +7,7 @@ const profileRoutes = require('./routes/profile');
 const passwordRoutes = require('./routes/password');
 const uploadRoutes = require('./routes/upload');
 const roleRoutes = require('./routes/role');
+const logRoutes = require('./routes/log');
 
 require('dotenv').config();
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/password', passwordRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/logs', logRoutes);
 
 app.get('/', (_req, res) => {
   res.json({ 
@@ -37,7 +39,8 @@ app.get('/', (_req, res) => {
       '/api/profile - Xem & cập nhật profile',
       '/api/password - Quên mật khẩu, đặt lại mật khẩu',
       '/api/upload - Upload avatar',
-      '/api/roles - Quản lý vai trò & quyền hạn (Admin/Moderator)'
+      '/api/roles - Quản lý vai trò & quyền hạn (Admin/Moderator)',
+      '/api/logs - Quản lý activity logs & thống kê (Admin/Moderator)'
     ]
   });
 });
