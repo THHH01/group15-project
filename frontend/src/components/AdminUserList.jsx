@@ -158,7 +158,7 @@ function AdminUserList() {
                   <td>{index + 1}</td>
                   <td>
                     <div className="user-name">
-                      {user.hoTen}
+                      {user.hoTen || user.name || user.email.split('@')[0]}
                       {user._id === nguoiDungHienTai?.id && (
                         <span className="badge-current">Bạn</span>
                       )}

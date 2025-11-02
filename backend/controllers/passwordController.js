@@ -49,15 +49,22 @@ const quenMatKhau = async (req, res) => {
     const resetToken = crypto.randomBytes(32).toString('hex');
     
     // Hash token trước khi lưu vào DB (bảo mật)
-    nguoiDung.resetPasswordToken = crypto
+    const hashedToken = crypto
       .createHash('sha256')
       .update(resetToken)
       .digest('hex');
     
     // Token hết hạn sau 1 giờ
-    nguoiDung.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    const expiryTime = Date.now() + 60 * 60 * 1000; // 1 hour
     
-    await nguoiDung.save();
+    // Update trực tiếp không trigger validation
+    await User.updateOne(
+      { _id: nguoiDung._id },
+      { 
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: expiryTime
+      }
+    );
 
     // Tạo reset URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
@@ -69,13 +76,13 @@ const quenMatKhau = async (req, res) => {
       // Môi trường dev: log ra console
       console.log('🔗 Reset Password URL:', resetUrl);
       console.log('📧 Email:', nguoiDung.email);
-      console.log('⏰ Hết hạn:', new Date(nguoiDung.resetPasswordExpires).toLocaleString('vi-VN'));
+      console.log('⏰ Hết hạn:', new Date(expiryTime).toLocaleString('vi-VN'));
       
       return res.status(200).json({ 
         thongBao: 'Link reset mật khẩu đã được tạo (check console để lấy link trong môi trường dev).',
         devOnly: {
           resetUrl,
-          expiresAt: nguoiDung.resetPasswordExpires
+          expiresAt: expiryTime
         }
       });
     }
@@ -163,12 +170,18 @@ const datLaiMatKhau = async (req, res) => {
       });
     }
 
-    // Cập nhật mật khẩu mới
-    nguoiDung.matKhau = matKhauMoi;
-    nguoiDung.resetPasswordToken = '';
-    nguoiDung.resetPasswordExpires = null;
+    // Cập nhật mật khẩu mới (dùng updateOne để tránh validation)
+    // Mật khẩu sẽ được hash bởi pre-save hook trong User model
+    const matKhauMaHoa = await bcrypt.hash(matKhauMoi, 10);
     
-    await nguoiDung.save();
+    await User.updateOne(
+      { _id: nguoiDung._id },
+      {
+        matKhau: matKhauMaHoa,
+        resetPasswordToken: '',
+        resetPasswordExpires: null
+      }
+    );
 
     return res.status(200).json({ 
       thongBao: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập với mật khẩu mới.' 
