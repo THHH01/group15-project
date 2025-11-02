@@ -18,6 +18,8 @@ function Profile() {
   const [dangUploadAvatar, setDangUploadAvatar] = useState(false);
   const [fileAvatar, setFileAvatar] = useState(null);
   const [previewAvatar, setPreviewAvatar] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [fileInfo, setFileInfo] = useState(null);
 
   const accessToken = localStorage.getItem('accessToken');
 
@@ -108,18 +110,26 @@ function Profile() {
     if (!file) return;
 
     // Kiểm tra loại file
-    if (!file.type.startsWith('image/')) {
-      setThongBao({ loai: 'loi', noiDung: 'Vui lòng chọn file ảnh (jpg, png, gif, webp).' });
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setThongBao({ loai: 'loi', noiDung: 'Vui lòng chọn file ảnh định dạng: JPG, PNG, GIF, WEBP.' });
       return;
     }
 
-    // Kiểm tra kích thước (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setThongBao({ loai: 'loi', noiDung: 'Kích thước ảnh tối đa 5MB.' });
+    // Kiểm tra kích thước (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setThongBao({ loai: 'loi', noiDung: 'Kích thước ảnh tối đa 10MB.' });
       return;
     }
 
     setFileAvatar(file);
+    
+    // Lưu thông tin file
+    setFileInfo({
+      name: file.name,
+      size: (file.size / 1024).toFixed(2) + ' KB',
+      type: file.type
+    });
 
     // Tạo preview
     const reader = new FileReader();
@@ -127,6 +137,8 @@ function Profile() {
       setPreviewAvatar(reader.result);
     };
     reader.readAsDataURL(file);
+    
+    setThongBao({ loai: '', noiDung: '' });
   };
 
   // Upload avatar lên server
@@ -137,6 +149,7 @@ function Profile() {
     }
 
     setDangUploadAvatar(true);
+    setUploadProgress(0);
     setThongBao({ loai: '', noiDung: '' });
 
     try {
@@ -146,6 +159,10 @@ function Profile() {
       const response = await axiosInstance.post('/api/upload/avatar', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
         }
       });
 
@@ -163,17 +180,25 @@ function Profile() {
         localStorage.setItem('nguoiDung', JSON.stringify(userData));
       }
 
+      // Hiển thị thông tin metadata nếu có
+      if (response.data.metadata) {
+        console.log('📊 Upload Metadata:', response.data.metadata);
+      }
+
       setThongBao({ loai: 'thanh-cong', noiDung: response.data.thongBao });
       setFileAvatar(null);
       setPreviewAvatar(null);
+      setFileInfo(null);
+      setUploadProgress(0);
 
-      // Reload trang sau 1 giây để cập nhật avatar ở HomePage
+      // Reload trang sau 1.5 giây để cập nhật avatar ở HomePage
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 1500);
     } catch (error) {
       const message = error?.response?.data?.thongBao || 'Không thể upload avatar. Vui lòng thử lại.';
       setThongBao({ loai: 'loi', noiDung: message });
+      setUploadProgress(0);
     } finally {
       setDangUploadAvatar(false);
     }
@@ -183,6 +208,8 @@ function Profile() {
   const handleHuyChonAvatar = () => {
     setFileAvatar(null);
     setPreviewAvatar(null);
+    setFileInfo(null);
+    setUploadProgress(0);
   };
 
   if (dangTaiDuLieu) {
@@ -235,7 +262,7 @@ function Profile() {
             <input
               type="file"
               id="avatar-input"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
               onChange={handleChonAvatar}
               style={{ display: 'none' }}
             />
@@ -245,27 +272,48 @@ function Profile() {
                 📷 Chọn ảnh
               </label>
             ) : (
-              <div className="avatar-upload-controls">
-                <button
-                  type="button"
-                  className="btn btn-success btn-sm"
-                  onClick={handleUploadAvatar}
-                  disabled={dangUploadAvatar}
-                >
-                  {dangUploadAvatar ? '⏳ Đang upload...' : '✅ Upload'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={handleHuyChonAvatar}
-                  disabled={dangUploadAvatar}
-                >
-                  Hủy
-                </button>
-              </div>
+              <>
+                {fileInfo && (
+                  <div className="file-info">
+                    <p className="file-name">📄 {fileInfo.name}</p>
+                    <p className="file-size">📊 {fileInfo.size}</p>
+                  </div>
+                )}
+                
+                {dangUploadAvatar && uploadProgress > 0 && (
+                  <div className="upload-progress">
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                    <p className="progress-text">{uploadProgress}%</p>
+                  </div>
+                )}
+                
+                <div className="avatar-upload-controls">
+                  <button
+                    type="button"
+                    className="btn btn-success btn-sm"
+                    onClick={handleUploadAvatar}
+                    disabled={dangUploadAvatar}
+                  >
+                    {dangUploadAvatar ? '⏳ Đang upload...' : '✅ Upload'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleHuyChonAvatar}
+                    disabled={dangUploadAvatar}
+                  >
+                    Hủy
+                  </button>
+                </div>
+              </>
             )}
             
-            <p className="avatar-hint">Tối đa 5MB (jpg, png, gif, webp)</p>
+            <p className="avatar-hint">Tối đa 10MB • JPG, PNG, GIF, WEBP • Tự động resize 400x400px</p>
           </div>
         </div>
 

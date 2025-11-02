@@ -1,0 +1,300 @@
+{
+  "info": {
+    "name": "Avatar Upload với Sharp",
+    "_postman_id": "avatar-upload-001",
+    "description": "Collection để test upload avatar với Sharp resize",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Đăng nhập để lấy token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.environment.set('accessToken', jsonData.accessToken);",
+              "    pm.environment.set('refreshToken', jsonData.refreshToken);",
+              "    pm.environment.set('userId', jsonData.nguoiDung.id);",
+              "    pm.test('✅ Đăng nhập thành công', () => {",
+              "        pm.expect(jsonData.accessToken).to.be.a('string');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"matKhau\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Upload Avatar (với Sharp resize)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Upload thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    ",
+              "    pm.test('✅ Có URL avatar', () => {",
+              "        pm.expect(jsonData.avatar).to.be.a('string');",
+              "        pm.expect(jsonData.avatar).to.include('cloudinary');",
+              "    });",
+              "    ",
+              "    pm.test('✅ Có metadata', () => {",
+              "        pm.expect(jsonData.metadata).to.be.an('object');",
+              "        pm.expect(jsonData.metadata.original).to.be.an('object');",
+              "        pm.expect(jsonData.metadata.resized).to.be.an('object');",
+              "        pm.expect(jsonData.metadata.cloudinary).to.be.an('object');",
+              "    });",
+              "    ",
+              "    pm.test('✅ Ảnh đã được resize về 400x400', () => {",
+              "        pm.expect(jsonData.metadata.resized.width).to.equal(400);",
+              "        pm.expect(jsonData.metadata.resized.height).to.equal(400);",
+              "    });",
+              "    ",
+              "    console.log('📸 Ảnh gốc:', jsonData.metadata.original);",
+              "    console.log('✅ Ảnh đã resize:', jsonData.metadata.resized);",
+              "    console.log('☁️  Cloudinary:', jsonData.metadata.cloudinary.url);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"}
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "avatar",
+              "type": "file",
+              "src": "",
+              "description": "Chọn file ảnh để upload (JPG, PNG, GIF, WEBP)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/upload/avatar",
+          "host": ["{{base_url}}"],
+          "path": ["api", "upload", "avatar"]
+        },
+        "description": "Upload avatar với Sharp resize tự động về 400x400px"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Upload Avatar Multiple Sizes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Upload multiple sizes thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    ",
+              "    pm.test('✅ Có 3 kích thước', () => {",
+              "        pm.expect(jsonData.avatars).to.be.an('array');",
+              "        pm.expect(jsonData.avatars).to.have.lengthOf(3);",
+              "    });",
+              "    ",
+              "    pm.test('✅ Có thumbnail, medium, large', () => {",
+              "        const sizes = jsonData.avatars.map(a => a.size);",
+              "        pm.expect(sizes).to.include('thumbnail');",
+              "        pm.expect(sizes).to.include('medium');",
+              "        pm.expect(sizes).to.include('large');",
+              "    });",
+              "    ",
+              "    console.log('📸 Avatars:', jsonData.avatars);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"}
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "avatar",
+              "type": "file",
+              "src": "",
+              "description": "Chọn file ảnh"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/upload/avatar-multiple",
+          "host": ["{{base_url}}"],
+          "path": ["api", "upload", "avatar-multiple"]
+        },
+        "description": "Upload avatar với 3 kích thước: thumbnail (100x100), medium (400x400), large (800x800)"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Lấy thông tin profile (kiểm tra avatar)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Lấy profile thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    ",
+              "    pm.test('✅ Có avatar URL', () => {",
+              "        pm.expect(jsonData.nguoiDung.avatar).to.be.a('string');",
+              "    });",
+              "    ",
+              "    console.log('👤 Avatar URL:', jsonData.nguoiDung.avatar);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"}
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/profile",
+          "host": ["{{base_url}}"],
+          "path": ["api", "profile"]
+        },
+        "description": "Kiểm tra avatar đã được cập nhật trong profile"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Upload file không hợp lệ (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Bị chặn (400)', () => {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "",
+              "const jsonData = pm.response.json();",
+              "pm.test('✅ Có thông báo lỗi', () => {",
+              "    pm.expect(jsonData.thongBao).to.be.a('string');",
+              "});",
+              "",
+              "console.log('Lỗi (Expected):', jsonData.thongBao);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{accessToken}}"}
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "avatar",
+              "type": "file",
+              "src": "",
+              "description": "Chọn file không phải ảnh (PDF, TXT, etc) để test validation"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/upload/avatar",
+          "host": ["{{base_url}}"],
+          "path": ["api", "upload", "avatar"]
+        },
+        "description": "Test upload file không hợp lệ (không phải ảnh)"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Upload không có token (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Bị chặn (401)', () => {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "avatar",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/upload/avatar",
+          "host": ["{{base_url}}"],
+          "path": ["api", "upload", "avatar"]
+        },
+        "description": "Test upload không có token xác thực"
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
+
