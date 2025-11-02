@@ -34,6 +34,7 @@ Dự án **Hệ thống quản lý người dùng** là một ứng dụng full-
 - **Sharp** - Xử lý và resize ảnh
 - **Nodemailer** - Gửi email
 - **Multer** - Upload file
+- **express-rate-limit** - Rate limiting & chống brute force
 
 ### Frontend
 - **React.js** - Framework UI
@@ -137,6 +138,13 @@ CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 - `PUT /api/roles/:id/trang-thai` - Cập nhật trạng thái user (Admin, Moderator)
 - `PUT /api/roles/:id/quyen-han` - Cập nhật quyền hạn custom (Admin only)
 
+### Activity Logs (Admin/Moderator) ⭐ NEW
+- `GET /api/logs` - Danh sách logs với filter và pagination
+- `GET /api/logs/recent` - Logs gần đây
+- `GET /api/logs/stats` - Thống kê hoạt động
+- `GET /api/logs/user/:id` - Logs của user cụ thể
+- `DELETE /api/logs/cleanup` - Xóa logs cũ (Admin only)
+
 ---
 
 ## 🧪 Testing với Postman
@@ -148,7 +156,8 @@ Import các collection files từ `backend/postman/`:
 3. `advanced-features.postman_collection.json` - Test advanced features
 4. `rbac.postman_collection.json` - Test RBAC (User, Moderator, Admin)
 5. `avatar-upload.postman_collection.json` - Test upload avatar với Sharp
-6. `forgot-password.postman_collection.json` - Test forgot password & reset password với email thật ⭐ NEW
+6. `forgot-password.postman_collection.json` - Test forgot password & reset password với email thật
+7. `activity-logs.postman_collection.json` - Test activity logging & rate limiting ⭐ NEW
 
 Tạo **Environment** trong Postman với:
 - `base_url` = `http://localhost:3000`
@@ -238,6 +247,28 @@ Tài khoản mẫu:
    EMAIL_PASS=your-app-password-16-characters
    ```
 
+### Hoạt động 9: User Activity Logging & Rate Limiting ⭐ NEW
+- ✅ **Activity Logging** - Ghi lại mọi hoạt động người dùng
+- ✅ Schema `ActivityLog` với đầy đủ fields (hành động, trạng thái, IP, user agent)
+- ✅ Middleware `logActivity` và `logActivitySimple` tự động ghi log
+- ✅ Logging cho: đăng ký, đăng nhập, đăng xuất, đăng nhập thất bại
+- ✅ **Rate Limiting** - Chống brute force và spam
+  - Login: 5 lần thất bại / 15 phút
+  - Signup: 3 tài khoản / 1 giờ từ cùng IP
+  - Forgot Password: 3 yêu cầu / 1 giờ
+- ✅ API `/api/logs` - Quản lý logs (Admin/Moderator)
+  - `GET /api/logs` - Danh sách logs với pagination và filter
+  - `GET /api/logs/recent` - Logs gần đây
+  - `GET /api/logs/stats` - Thống kê hoạt động
+  - `GET /api/logs/user/:id` - Logs của user cụ thể
+  - `DELETE /api/logs/cleanup` - Xóa logs cũ (Admin only)
+- ✅ Frontend: Trang Activity Logs cho Admin/Moderator
+  - Hiển thị danh sách logs với filter và pagination
+  - Thống kê tổng quan (tổng logs, thành công, thất bại, login thất bại)
+  - Thống kê theo hành động
+  - Top users hoạt động nhiều nhất
+  - UI đẹp với tabs, cards, và responsive design
+
 ---
 
 ## 🔒 Bảo mật
@@ -254,6 +285,8 @@ Tài khoản mẫu:
 - Upload validation - Kiểm tra file type, size, format
 - Sharp resize - Tối ưu ảnh trước khi lưu trữ
 - Gmail SMTP với App Password (không dùng mật khẩu thật)
+- **Rate Limiting** - Chống brute force login, spam signup, spam forgot password
+- **Activity Logging** - Ghi lại mọi hoạt động để audit và phát hiện bất thường
 - CORS được cấu hình đúng
 
 ---
