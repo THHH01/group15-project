@@ -108,8 +108,9 @@ CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 
 ### Authentication
 - `POST /api/auth/signup` - Đăng ký tài khoản
-- `POST /api/auth/login` - Đăng nhập
-- `POST /api/auth/logout` - Đăng xuất
+- `POST /api/auth/login` - Đăng nhập (trả về Access Token + Refresh Token)
+- `POST /api/auth/refresh` - Làm mới Access Token bằng Refresh Token
+- `POST /api/auth/logout` - Đăng xuất và revoke refresh token
 
 ### Profile
 - `GET /api/profile` - Lấy thông tin profile
@@ -136,6 +137,7 @@ Import các collection files từ `backend/postman/`:
 1. `authentication.postman_collection.json` - Test authentication APIs
 2. `admin-users.postman_collection.json` - Test admin features
 3. `advanced-features.postman_collection.json` - Test advanced features
+4. `refresh-token.postman_collection.json` - Test refresh token & session management
 
 Tạo **Environment** trong Postman với:
 - `base_url` = `http://localhost:3000`
@@ -163,14 +165,24 @@ Tạo **Environment** trong Postman với:
 - ✅ Đổi mật khẩu với token reset
 - ✅ Upload Avatar (Cloudinary)
 
+### Hoạt động 5: Refresh Token & Session Management ⭐ NEW
+- ✅ Access Token (thời hạn ngắn - 15 phút)
+- ✅ Refresh Token (thời hạn dài - 7 ngày)
+- ✅ API `/auth/refresh` - Làm mới token tự động
+- ✅ Token Rotation - Refresh token được thay mới sau mỗi lần sử dụng
+- ✅ Revoke Token - Hủy token khi logout
+- ✅ Frontend tự động refresh token khi hết hạn (axios interceptor)
+
 ---
 
 ## 🔒 Bảo mật
 
 - Mật khẩu được mã hóa bằng bcrypt
-- JWT token xác thực người dùng
+- JWT Access Token (15 phút) + Refresh Token (7 ngày)
+- Token Rotation - Refresh token tự động đổi mới
 - Middleware RBAC phân quyền
 - Reset password token có thời hạn (1 giờ)
+- Axios interceptor tự động refresh token khi hết hạn
 - CORS được cấu hình đúng
 
 ---

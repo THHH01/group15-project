@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
+const RefreshToken = require('../models/RefreshToken');
 
 const taoPayloadToken = (user) => ({
   id: user._id,
@@ -8,13 +10,32 @@ const taoPayloadToken = (user) => ({
   vaiTro: user.vaiTro
 });
 
-const taoToken = (user) => {
+// Tạo Access Token (thời hạn ngắn - 15 phút)
+const taoAccessToken = (user) => {
   const biMat = process.env.JWT_SECRET;
   if (!biMat) {
     throw new Error('Thiếu JWT_SECRET trong biến môi trường');
   }
 
-  return jwt.sign(taoPayloadToken(user), biMat, { expiresIn: '1h' });
+  return jwt.sign(taoPayloadToken(user), biMat, { expiresIn: '15m' });
+};
+
+// Tạo Refresh Token (thời hạn dài - 7 ngày)
+const taoRefreshToken = async (nguoiDungId, req) => {
+  const tokenString = crypto.randomBytes(64).toString('hex');
+  
+  const thoiGianHetHan = new Date();
+  thoiGianHetHan.setDate(thoiGianHetHan.getDate() + 7); // 7 ngày
+
+  const refreshToken = await RefreshToken.create({
+    token: tokenString,
+    nguoiDungId,
+    thoiGianHetHan,
+    diaChi: req.ip || req.connection?.remoteAddress || '',
+    userAgent: req.get('user-agent') || ''
+  });
+
+  return refreshToken.token;
 };
 
 const dangKy = async (req, res) => {
@@ -65,11 +86,14 @@ const dangNhap = async (req, res) => {
       return res.status(401).json({ thongBao: 'Email hoặc mật khẩu không chính xác.' });
     }
 
-    const token = taoToken(nguoiDung);
+    // Tạo Access Token và Refresh Token
+    const accessToken = taoAccessToken(nguoiDung);
+    const refreshToken = await taoRefreshToken(nguoiDung._id, req);
 
     return res.status(200).json({
       thongBao: 'Đăng nhập thành công!',
-      token,
+      accessToken,
+      refreshToken,
       nguoiDung: taoPayloadToken(nguoiDung)
     });
   } catch (error) {
@@ -78,13 +102,93 @@ const dangNhap = async (req, res) => {
   }
 };
 
-const dangXuat = async (_req, res) => {
-  return res.status(200).json({ thongBao: 'Đăng xuất thành công! Hãy xóa token trên thiết bị của bạn.' });
+const dangXuat = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    // Nếu có refresh token, hủy nó
+    if (refreshToken) {
+      await RefreshToken.updateOne(
+        { token: refreshToken },
+        { $set: { daHuy: true } }
+      );
+    }
+
+    // Nếu có userId từ middleware, hủy tất cả token của user
+    if (req.nguoiDung?.id) {
+      await RefreshToken.huyTatCaTokenCuaUser(req.nguoiDung.id);
+    }
+
+    return res.status(200).json({ 
+      thongBao: 'Đăng xuất thành công! Hãy xóa token trên thiết bị của bạn.' 
+    });
+  } catch (error) {
+    console.error('Lỗi đăng xuất:', error);
+    return res.status(500).json({ 
+      thongBao: 'Có lỗi xảy ra khi đăng xuất.', 
+      chiTiet: error.message 
+    });
+  }
+};
+
+// API làm mới Access Token bằng Refresh Token
+const lamMoiToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(400).json({ thongBao: 'Vui lòng cung cấp refresh token.' });
+    }
+
+    // Tìm refresh token trong database
+    const tokenRecord = await RefreshToken.findOne({ token: refreshToken });
+
+    if (!tokenRecord) {
+      return res.status(401).json({ thongBao: 'Refresh token không hợp lệ.' });
+    }
+
+    // Kiểm tra token có còn hiệu lực không
+    if (!tokenRecord.conHieuLuc()) {
+      return res.status(401).json({ 
+        thongBao: 'Refresh token đã hết hạn hoặc bị hủy. Vui lòng đăng nhập lại.' 
+      });
+    }
+
+    // Lấy thông tin user
+    const nguoiDung = await User.findById(tokenRecord.nguoiDungId);
+    if (!nguoiDung) {
+      return res.status(404).json({ thongBao: 'Người dùng không tồn tại.' });
+    }
+
+    // Tạo Access Token mới
+    const accessToken = taoAccessToken(nguoiDung);
+
+    // Tùy chọn: tạo refresh token mới (rotation)
+    const newRefreshToken = await taoRefreshToken(nguoiDung._id, req);
+    
+    // Hủy refresh token cũ
+    tokenRecord.daHuy = true;
+    await tokenRecord.save();
+
+    return res.status(200).json({
+      thongBao: 'Làm mới token thành công!',
+      accessToken,
+      refreshToken: newRefreshToken,
+      nguoiDung: taoPayloadToken(nguoiDung)
+    });
+  } catch (error) {
+    console.error('Lỗi làm mới token:', error);
+    return res.status(500).json({ 
+      thongBao: 'Có lỗi xảy ra khi làm mới token.', 
+      chiTiet: error.message 
+    });
+  }
 };
 
 module.exports = {
   dangKy,
   dangNhap,
-  dangXuat
+  dangXuat,
+  lamMoiToken
 };
 

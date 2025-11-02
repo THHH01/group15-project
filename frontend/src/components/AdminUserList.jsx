@@ -1,8 +1,6 @@
-    import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import axiosInstance from '../utils/axiosInstance';
 import './AdminUserList.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 function AdminUserList() {
   const [danhSachUser, setDanhSachUser] = useState([]);
@@ -10,11 +8,11 @@ function AdminUserList() {
   const [thongBao, setThongBao] = useState({ loai: '', noiDung: '' });
   const [dangXoa, setDangXoa] = useState(null);
 
-  const token = localStorage.getItem('token');
+  const accessToken = localStorage.getItem('accessToken');
   const nguoiDungHienTai = JSON.parse(localStorage.getItem('nguoiDung') || '{}');
 
   useEffect(() => {
-    if (!token) {
+    if (!accessToken) {
       setThongBao({ loai: 'loi', noiDung: 'Vui lòng đăng nhập để tiếp tục.' });
       setDangTaiDuLieu(false);
       return;
@@ -27,16 +25,12 @@ function AdminUserList() {
     }
 
     taiDanhSachUser();
-  }, [token]);
+  }, [accessToken]);
 
   const taiDanhSachUser = async () => {
     try {
       setDangTaiDuLieu(true);
-      const response = await axios.get(`${API_URL}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await axiosInstance.get('/api/users');
 
       setDanhSachUser(response.data.danhSach || []);
       setThongBao({ loai: '', noiDung: '' });
@@ -46,7 +40,8 @@ function AdminUserList() {
 
       if (error?.response?.status === 401 || error?.response?.status === 403) {
         setTimeout(() => {
-          localStorage.removeItem('token');
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
           localStorage.removeItem('nguoiDung');
           window.location.reload();
         }, 2000);
@@ -63,11 +58,7 @@ function AdminUserList() {
 
     try {
       setDangXoa(userId);
-      await axios.delete(`${API_URL}/api/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      await axiosInstance.delete(`/api/users/${userId}`);
 
       setThongBao({ loai: 'thanh-cong', noiDung: `Đã xóa người dùng "${hoTen}" thành công.` });
       
@@ -91,7 +82,7 @@ function AdminUserList() {
     );
   }
 
-  if (nguoiDungHienTai?.vaiTro !== 'admin' || !token) {
+  if (nguoiDungHienTai?.vaiTro !== 'admin' || !accessToken) {
     return (
       <div className="admin-container">
         <div className="admin-card">
