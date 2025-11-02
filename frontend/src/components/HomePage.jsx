@@ -95,7 +95,7 @@ function HomePage() {
             >
               Profile
             </button>
-            {nguoiDung?.vaiTro === 'admin' && (
+            {(nguoiDung?.vaiTro === 'admin' || nguoiDung?.vaiTro === 'moderator') && (
               <button 
                 className={trangHienTai === 'quan-ly-user' ? 'nav-btn active' : 'nav-btn'}
                 onClick={() => setTrangHienTai('quan-ly-user')}

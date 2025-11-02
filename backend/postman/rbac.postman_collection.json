@@ -1,0 +1,408 @@
+{
+  "info": {
+    "name": "Advanced RBAC - Role-Based Access Control",
+    "_postman_id": "rbac-001",
+    "description": "Collection để test Advanced RBAC với User, Moderator, Admin",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Đăng nhập Admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.environment.set('adminAccessToken', jsonData.accessToken);",
+              "    pm.environment.set('adminRefreshToken', jsonData.refreshToken);",
+              "    pm.test('✅ Admin đăng nhập thành công', () => {",
+              "        pm.expect(jsonData.nguoiDung.vaiTro).to.equal('admin');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"matKhau\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. Đăng nhập Moderator",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.environment.set('modAccessToken', jsonData.accessToken);",
+              "    pm.environment.set('modRefreshToken', jsonData.refreshToken);",
+              "    pm.environment.set('modUserId', jsonData.nguoiDung.id);",
+              "    pm.test('✅ Moderator đăng nhập thành công', () => {",
+              "        pm.expect(jsonData.nguoiDung.vaiTro).to.equal('moderator');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"moderator@example.com\",\n  \"matKhau\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. Đăng nhập User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const jsonData = pm.response.json();",
+              "    pm.environment.set('userAccessToken', jsonData.accessToken);",
+              "    pm.environment.set('userRefreshToken', jsonData.refreshToken);",
+              "    pm.environment.set('userId', jsonData.nguoiDung.id);",
+              "    pm.test('✅ User đăng nhập thành công', () => {",
+              "        pm.expect(jsonData.nguoiDung.vaiTro).to.equal('user');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"matKhau\": \"123456\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["api", "auth", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. [Admin] Lấy danh sách users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Admin lấy danh sách thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.danhSach).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{adminAccessToken}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/roles",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. [Moderator] Lấy danh sách users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Moderator lấy danh sách thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.danhSach).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{modAccessToken}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/roles",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. [User] Lấy danh sách users (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ User bị chặn (403)', () => {",
+              "    pm.response.to.have.status(403);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{userAccessToken}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/roles",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. [Admin] Lấy thống kê",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Lấy thống kê thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.thongKe).to.be.an('object');",
+              "    pm.expect(jsonData.thongKe.vaiTro).to.be.an('object');",
+              "    pm.expect(jsonData.thongKe.trangThai).to.be.an('object');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [{"key": "Authorization", "value": "Bearer {{adminAccessToken}}"}],
+        "url": {
+          "raw": "{{base_url}}/api/roles/thong-ke",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "thong-ke"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. [Admin] Cập nhật vai trò User -> Moderator",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Cập nhật vai trò thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.nguoiDung.vaiTro).to.equal('moderator');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vaiTro\": \"moderator\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/roles/{{userId}}/vai-tro",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "{{userId}}", "vai-tro"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. [Moderator] Khóa User (suspended)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Moderator khóa User thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.nguoiDung.trangThai).to.equal('suspended');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{modAccessToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"trangThai\": \"suspended\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/roles/{{userId}}/trang-thai",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "{{userId}}", "trang-thai"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10. [Moderator] Khóa Moderator (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Moderator không thể khóa Moderator khác (403)', () => {",
+              "    pm.response.to.have.status(403);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{modAccessToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"trangThai\": \"suspended\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/roles/{{modUserId}}/trang-thai",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "{{modUserId}}", "trang-thai"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11. [Admin] Cập nhật quyền hạn custom",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ Cập nhật quyền hạn thành công', () => {",
+              "    pm.response.to.have.status(200);",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.nguoiDung.quyenHan).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{adminAccessToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"quyenHan\": [\"xem_profile\", \"cap_nhat_profile\", \"xoa_bai_viet\"]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/roles/{{userId}}/quyen-han",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "{{userId}}", "quyen-han"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12. [User] Cập nhật vai trò (403)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('✅ User không thể cập nhật vai trò (403)', () => {",
+              "    pm.response.to.have.status(403);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userAccessToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vaiTro\": \"admin\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/roles/{{userId}}/vai-tro",
+          "host": ["{{base_url}}"],
+          "path": ["api", "roles", "{{userId}}", "vai-tro"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
+

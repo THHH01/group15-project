@@ -18,8 +18,8 @@ function AdminUserList() {
       return;
     }
 
-    if (nguoiDungHienTai?.vaiTro !== 'admin') {
-      setThongBao({ loai: 'loi', noiDung: 'Bạn không có quyền truy cập trang này. Chỉ Admin mới được phép.' });
+    if (nguoiDungHienTai?.vaiTro !== 'admin' && nguoiDungHienTai?.vaiTro !== 'moderator') {
+      setThongBao({ loai: 'loi', noiDung: 'Bạn không có quyền truy cập trang này. Chỉ Admin và Moderator mới được phép.' });
       setDangTaiDuLieu(false);
       return;
     }
@@ -82,7 +82,7 @@ function AdminUserList() {
     );
   }
 
-  if (nguoiDungHienTai?.vaiTro !== 'admin' || !accessToken) {
+  if ((nguoiDungHienTai?.vaiTro !== 'admin' && nguoiDungHienTai?.vaiTro !== 'moderator') || !accessToken) {
     return (
       <div className="admin-container">
         <div className="admin-card">
@@ -132,6 +132,7 @@ function AdminUserList() {
               <th>Họ và tên</th>
               <th>Email</th>
               <th>Vai trò</th>
+              <th>Trạng thái</th>
               <th>Ngày tạo</th>
               <th>Hành động</th>
             </tr>
@@ -139,7 +140,7 @@ function AdminUserList() {
           <tbody>
             {danhSachUser.length === 0 ? (
               <tr>
-                <td colSpan="6" className="no-data">
+                <td colSpan="7" className="no-data">
                   Không có người dùng nào
                 </td>
               </tr>
@@ -158,14 +159,24 @@ function AdminUserList() {
                   <td>{user.email}</td>
                   <td>
                     <span className={`badge badge-${user.vaiTro}`}>
-                      {user.vaiTro === 'admin' ? '👑 Admin' : '👤 User'}
+                      {user.vaiTro === 'admin' && '👑 Admin'}
+                      {user.vaiTro === 'moderator' && '🛡️ Moderator'}
+                      {user.vaiTro === 'user' && '👤 User'}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`badge badge-status-${user.trangThai || 'active'}`}>
+                      {user.trangThai === 'active' && '✅ Hoạt động'}
+                      {user.trangThai === 'suspended' && '⏸️ Tạm khóa'}
+                      {user.trangThai === 'banned' && '🚫 Cấm'}
+                      {!user.trangThai && '✅ Hoạt động'}
                     </span>
                   </td>
                   <td>{new Date(user.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td>
                     <button
                       className="btn-delete"
-                      onClick={() => handleXoaUser(user._id, user.hoTen)}
+                      onClick={() => handleXoaUser(user._id, user.hoTen || user.name || user.email.split('@')[0])}
                       disabled={dangXoa === user._id}
                     >
                       {dangXoa === user._id ? '⏳ Đang xóa...' : '🗑️ Xóa'}
