@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Profile from './Profile';
 import AdminUserList from './AdminUserList';
+import ActivityLogs from './ActivityLogs';
 import './HomePage.css';
 
 function HomePage() {
@@ -24,6 +25,8 @@ function HomePage() {
         return <Profile />;
       case 'quan-ly-user':
         return <AdminUserList />;
+      case 'activity-logs':
+        return <ActivityLogs />;
       case 'trang-chu':
       default:
         return (
@@ -96,12 +99,20 @@ function HomePage() {
               Profile
             </button>
             {(nguoiDung?.vaiTro === 'admin' || nguoiDung?.vaiTro === 'moderator') && (
-              <button 
-                className={trangHienTai === 'quan-ly-user' ? 'nav-btn active' : 'nav-btn'}
-                onClick={() => setTrangHienTai('quan-ly-user')}
-              >
-                👥 Quản lý User
-              </button>
+              <>
+                <button 
+                  className={trangHienTai === 'quan-ly-user' ? 'nav-btn active' : 'nav-btn'}
+                  onClick={() => setTrangHienTai('quan-ly-user')}
+                >
+                  👥 Quản lý User
+                </button>
+                <button 
+                  className={trangHienTai === 'activity-logs' ? 'nav-btn active' : 'nav-btn'}
+                  onClick={() => setTrangHienTai('activity-logs')}
+                >
+                  📊 Activity Logs
+                </button>
+              </>
             )}
           </nav>
 
