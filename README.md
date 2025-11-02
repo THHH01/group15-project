@@ -31,6 +31,7 @@ Dự án **Hệ thống quản lý người dùng** là một ứng dụng full-
 - **JWT** - Xác thực người dùng
 - **bcryptjs** - Mã hóa mật khẩu
 - **Cloudinary** - Lưu trữ ảnh
+- **Sharp** - Xử lý và resize ảnh
 - **Nodemailer** - Gửi email
 - **Multer** - Upload file
 
@@ -125,8 +126,9 @@ CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 - `POST /api/password/forgot` - Yêu cầu reset password
 - `POST /api/password/reset` - Đặt lại password với token
 
-### Upload
-- `POST /api/upload/avatar` - Upload avatar lên Cloudinary
+### Upload ⭐ UPGRADED
+- `POST /api/upload/avatar` - Upload avatar với Sharp resize (400x400px)
+- `POST /api/upload/avatar-multiple` - Upload nhiều kích thước (thumbnail, medium, large)
 
 ### Roles & Permissions (Admin/Moderator) ⭐ NEW
 - `GET /api/roles` - Lấy danh sách users theo role/status (Admin, Moderator)
@@ -145,6 +147,7 @@ Import các collection files từ `backend/postman/`:
 2. `admin-users.postman_collection.json` - Test admin features
 3. `advanced-features.postman_collection.json` - Test advanced features
 4. `rbac.postman_collection.json` - Test RBAC (User, Moderator, Admin)
+5. `avatar-upload.postman_collection.json` - Test upload avatar với Sharp
 
 Tạo **Environment** trong Postman với:
 - `base_url` = `http://localhost:3000`
@@ -192,7 +195,7 @@ Tài khoản mẫu:
 - ✅ Revoke Token - Hủy token khi logout
 - ✅ Frontend tự động refresh token khi hết hạn (axios interceptor)
 
-### Hoạt động 6: Advanced RBAC (Role-Based Access Control) ⭐ NEW
+### Hoạt động 6: Advanced RBAC (Role-Based Access Control)
 - ✅ 3 vai trò: User, Moderator, Admin
 - ✅ Trạng thái tài khoản: Active, Suspended, Banned
 - ✅ Quyền hạn tùy chỉnh (permissions array)
@@ -202,6 +205,16 @@ Tài khoản mẫu:
 - ✅ API quản lý vai trò, trạng thái, quyền hạn
 - ✅ Frontend hiển thị chức năng theo role (Admin/Moderator có thể quản lý users)
 - ✅ Moderator có thể xem danh sách và khóa User (không khóa được Admin/Moderator)
+
+### Hoạt động 7: Upload ảnh nâng cao (Avatar) ⭐ NEW
+- ✅ **Sharp** - Xử lý ảnh trước khi upload
+- ✅ Tự động resize về 400x400px (quality 90%)
+- ✅ Hỗ trợ nhiều định dạng: JPG, PNG, GIF, WEBP
+- ✅ Giới hạn 10MB, middleware validation
+- ✅ Upload nhiều kích thước: thumbnail (100x100), medium (400x400), large (800x800)
+- ✅ Metadata tracking (kích thước gốc, sau resize, Cloudinary info)
+- ✅ Frontend: Preview ảnh, progress bar, file info display
+- ✅ Tự động xóa avatar cũ trên Cloudinary
 
 ---
 
@@ -215,6 +228,8 @@ Tài khoản mẫu:
 - Moderator không thể khóa Admin/Moderator khác
 - Reset password token có thời hạn (1 giờ)
 - Axios interceptor tự động refresh token khi hết hạn
+- Upload validation - Kiểm tra file type, size, format
+- Sharp resize - Tối ưu ảnh trước khi lưu trữ
 - CORS được cấu hình đúng
 
 ---

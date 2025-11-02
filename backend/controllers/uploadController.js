@@ -1,5 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const sharp = require('sharp');
 const User = require('../models/User');
 
 // Cấu hình Cloudinary
@@ -27,10 +28,12 @@ const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
   // Chỉ chấp nhận file ảnh
-  if (file.mimetype.startsWith('image/')) {
+  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  
+  if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Chỉ chấp nhận file ảnh (jpg, png, gif, webp)'), false);
+    cb(new Error('Chỉ chấp nhận file ảnh định dạng: JPG, PNG, GIF, WEBP'), false);
   }
 };
 
@@ -38,14 +41,55 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // Giới hạn 5MB
+    fileSize: 10 * 1024 * 1024 // Giới hạn 10MB (tăng lên vì sẽ resize)
   }
 });
 
 // Middleware xử lý upload
 const uploadMiddleware = upload.single('avatar');
 
-// POST /api/upload/avatar - Upload avatar
+// Hàm xử lý resize ảnh với Sharp
+const resizeImage = async (buffer, options = {}) => {
+  const {
+    width = 400,
+    height = 400,
+    quality = 90,
+    format = 'jpeg'
+  } = options;
+
+  try {
+    const resizedBuffer = await sharp(buffer)
+      .resize(width, height, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .toFormat(format, { quality })
+      .toBuffer();
+
+    return resizedBuffer;
+  } catch (error) {
+    console.error('Lỗi resize ảnh:', error);
+    throw new Error('Không thể xử lý ảnh');
+  }
+};
+
+// Hàm lấy metadata ảnh
+const getImageMetadata = async (buffer) => {
+  try {
+    const metadata = await sharp(buffer).metadata();
+    return {
+      width: metadata.width,
+      height: metadata.height,
+      format: metadata.format,
+      size: metadata.size
+    };
+  } catch (error) {
+    console.error('Lỗi lấy metadata:', error);
+    return null;
+  }
+};
+
+// POST /api/upload/avatar - Upload avatar với Sharp resize
 const uploadAvatar = async (req, res) => {
   try {
     // Kiểm tra xem user đã đăng nhập chưa
@@ -57,6 +101,22 @@ const uploadAvatar = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ thongBao: 'Vui lòng chọn file ảnh để upload.' });
     }
+
+    // Lấy metadata ảnh gốc
+    const originalMetadata = await getImageMetadata(req.file.buffer);
+    console.log('📸 Ảnh gốc:', originalMetadata);
+
+    // Resize ảnh với Sharp
+    console.log('🔄 Đang resize ảnh...');
+    const resizedBuffer = await resizeImage(req.file.buffer, {
+      width: 400,
+      height: 400,
+      quality: 90,
+      format: 'jpeg'
+    });
+
+    const resizedMetadata = await getImageMetadata(resizedBuffer);
+    console.log('✅ Ảnh đã resize:', resizedMetadata);
 
     // Cấu hình Cloudinary lại mỗi lần upload để đảm bảo
     if (process.env.CLOUDINARY_URL) {
@@ -80,16 +140,15 @@ const uploadAvatar = async (req, res) => {
       });
     }
 
-    // Upload lên Cloudinary từ buffer
+    // Upload lên Cloudinary từ buffer đã resize
+    console.log('☁️  Đang upload lên Cloudinary...');
     const uploadPromise = new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: 'user-avatars',
           public_id: `user_${req.nguoiDung.id}_${Date.now()}`,
-          transformation: [
-            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-            { quality: 'auto' }
-          ]
+          resource_type: 'image',
+          format: 'jpg'
         },
         (error, result) => {
           if (error) {
@@ -100,10 +159,11 @@ const uploadAvatar = async (req, res) => {
         }
       );
 
-      uploadStream.end(req.file.buffer);
+      uploadStream.end(resizedBuffer);
     });
 
     const result = await uploadPromise;
+    console.log('✅ Upload thành công:', result.secure_url);
 
     // Cập nhật avatar URL vào database
     const nguoiDung = await User.findById(req.nguoiDung.id);
@@ -111,14 +171,15 @@ const uploadAvatar = async (req, res) => {
     // Xóa avatar cũ trên Cloudinary (nếu có)
     if (nguoiDung.avatar && nguoiDung.avatar.includes('cloudinary')) {
       try {
-        const publicId = nguoiDung.avatar
+        const oldPublicId = nguoiDung.avatar
           .split('/')
           .slice(-2)
           .join('/')
           .split('.')[0];
-        await cloudinary.uploader.destroy(`user-avatars/${publicId}`);
+        await cloudinary.uploader.destroy(oldPublicId);
+        console.log('🗑️  Đã xóa avatar cũ');
       } catch (deleteError) {
-        console.warn('Không thể xóa avatar cũ:', deleteError);
+        console.warn('⚠️  Không thể xóa avatar cũ:', deleteError.message);
       }
     }
 
@@ -128,11 +189,23 @@ const uploadAvatar = async (req, res) => {
     return res.status(200).json({
       thongBao: 'Upload avatar thành công!',
       avatar: result.secure_url,
+      metadata: {
+        original: originalMetadata,
+        resized: resizedMetadata,
+        cloudinary: {
+          url: result.secure_url,
+          public_id: result.public_id,
+          format: result.format,
+          width: result.width,
+          height: result.height,
+          bytes: result.bytes
+        }
+      },
       nguoiDung: nguoiDung.toJSON()
     });
 
   } catch (error) {
-    console.error('Lỗi upload avatar:', error);
+    console.error('❌ Lỗi upload avatar:', error);
     return res.status(500).json({ 
       thongBao: 'Không thể upload avatar.', 
       chiTiet: error.message 
@@ -140,5 +213,74 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
-module.exports = { uploadAvatar, uploadMiddleware };
+// POST /api/upload/avatar-multiple - Upload nhiều kích thước
+const uploadAvatarMultiple = async (req, res) => {
+  try {
+    if (!req.nguoiDung) {
+      return res.status(401).json({ thongBao: 'Vui lòng đăng nhập.' });
+    }
 
+    if (!req.file) {
+      return res.status(400).json({ thongBao: 'Vui lòng chọn file ảnh.' });
+    }
+
+    // Tạo 3 kích thước: thumbnail, medium, large
+    const sizes = [
+      { name: 'thumbnail', width: 100, height: 100 },
+      { name: 'medium', width: 400, height: 400 },
+      { name: 'large', width: 800, height: 800 }
+    ];
+
+    const uploadPromises = sizes.map(async (size) => {
+      const resizedBuffer = await resizeImage(req.file.buffer, {
+        width: size.width,
+        height: size.height,
+        quality: 90
+      });
+
+      return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: `user-avatars/${size.name}`,
+            public_id: `user_${req.nguoiDung.id}_${size.name}_${Date.now()}`,
+            resource_type: 'image'
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve({ size: size.name, url: result.secure_url });
+          }
+        );
+        uploadStream.end(resizedBuffer);
+      });
+    });
+
+    const results = await Promise.all(uploadPromises);
+
+    // Lưu URL medium làm avatar chính
+    const mediumUrl = results.find(r => r.size === 'medium')?.url;
+    const nguoiDung = await User.findById(req.nguoiDung.id);
+    nguoiDung.avatar = mediumUrl;
+    await nguoiDung.save();
+
+    return res.status(200).json({
+      thongBao: 'Upload thành công!',
+      avatars: results,
+      nguoiDung: nguoiDung.toJSON()
+    });
+
+  } catch (error) {
+    console.error('Lỗi upload multiple:', error);
+    return res.status(500).json({ 
+      thongBao: 'Không thể upload ảnh.', 
+      chiTiet: error.message 
+    });
+  }
+};
+
+module.exports = { 
+  uploadAvatar, 
+  uploadAvatarMultiple,
+  uploadMiddleware,
+  resizeImage,
+  getImageMetadata
+};
