@@ -21,7 +21,7 @@ function App() {
   const [thongBaoDangNhap, setThongBaoDangNhap] = useState('');
   const [dangKyDangXuLy, setDangKyDangXuLy] = useState(false);
   const [dangNhapDangXuLy, setDangNhapDangXuLy] = useState(false);
-  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+  const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken') || '');
   const [nguoiDung, setNguoiDung] = useState(() => {
     const luuTru = localStorage.getItem('nguoiDung');
     return luuTru ? JSON.parse(luuTru) : null;
@@ -33,12 +33,13 @@ function App() {
   );
 
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken);
     } else {
-      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     }
-  }, [token]);
+  }, [accessToken]);
 
   useEffect(() => {
     if (nguoiDung) {
@@ -88,7 +89,11 @@ function App() {
     try {
       const { data } = await client.post('/api/auth/login', formDangNhap);
       setThongBaoDangNhap(data.thongBao);
-      setToken(data.token);
+      
+      // Lưu cả access token và refresh token
+      setAccessToken(data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      
       setNguoiDung(data.nguoiDung);
       setFormDangNhap({ email: '', matKhau: '' });
     } catch (error) {
@@ -100,13 +105,14 @@ function App() {
 
   const handleDangXuat = async () => {
     try {
+      const refreshToken = localStorage.getItem('refreshToken');
       await client.post(
         '/api/auth/logout',
-        {},
+        { refreshToken },
         {
-          headers: token
+          headers: accessToken
             ? {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${accessToken}`
               }
             : undefined
         }
@@ -114,8 +120,9 @@ function App() {
     } catch (error) {
       console.warn('Đăng xuất phía server thất bại hoặc không cần thiết:', error);
     } finally {
-      setToken('');
+      setAccessToken('');
       setNguoiDung(null);
+      localStorage.removeItem('refreshToken');
       setThongBaoDangNhap('Đăng xuất thành công! Token đã được xóa khỏi trình duyệt.');
     }
   };
@@ -129,8 +136,8 @@ function App() {
     return <ResetPassword />;
   }
 
-  // Nếu đã đăng nhập (có token), hiển thị trang chủ
-  if (token) {
+  // Nếu đã đăng nhập (có access token), hiển thị trang chủ
+  if (accessToken) {
     return <HomePage />;
   }
 

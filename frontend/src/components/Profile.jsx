@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance';
 import './Profile.css';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
 function Profile() {
   const [nguoiDung, setNguoiDung] = useState(null);
@@ -21,25 +19,21 @@ function Profile() {
   const [fileAvatar, setFileAvatar] = useState(null);
   const [previewAvatar, setPreviewAvatar] = useState(null);
 
-  const token = localStorage.getItem('token');
+  const accessToken = localStorage.getItem('accessToken');
 
   useEffect(() => {
-    if (!token) {
+    if (!accessToken) {
       setThongBao({ loai: 'loi', noiDung: 'Vui lòng đăng nhập để xem thông tin cá nhân.' });
       setDangTaiDuLieu(false);
       return;
     }
     taiThongTinProfile();
-  }, [token]);
+  }, [accessToken]);
 
   const taiThongTinProfile = async () => {
     try {
       setDangTaiDuLieu(true);
-      const response = await axios.get(`${API_URL}/api/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const response = await axiosInstance.get('/api/profile');
 
       setNguoiDung(response.data.nguoiDung);
       setFormCapNhat({
@@ -71,16 +65,7 @@ function Profile() {
     setThongBao({ loai: '', noiDung: '' });
 
     try {
-      const response = await axios.put(
-        `${API_URL}/api/profile`,
-        formCapNhat,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await axiosInstance.put('/api/profile', formCapNhat);
 
       setNguoiDung(response.data.nguoiDung);
       setFormCapNhat({
@@ -158,16 +143,11 @@ function Profile() {
       const formData = new FormData();
       formData.append('avatar', fileAvatar);
 
-      const response = await axios.post(
-        `${API_URL}/api/upload/avatar`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+      const response = await axiosInstance.post('/api/upload/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
-      );
+      });
 
       // Cập nhật avatar trong state
       setNguoiDung((prev) => ({
@@ -215,7 +195,7 @@ function Profile() {
     );
   }
 
-  if (!token || !nguoiDung) {
+  if (!accessToken || !nguoiDung) {
     return (
       <div className="profile-container">
         <div className="profile-card">
