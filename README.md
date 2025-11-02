@@ -122,9 +122,9 @@ CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 - `POST /api/users` - Thêm user mới (Admin)
 - `DELETE /api/users/:id` - Xóa user
 
-### Password
-- `POST /api/password/forgot` - Yêu cầu reset password
-- `POST /api/password/reset` - Đặt lại password với token
+### Password ⭐ UPGRADED
+- `POST /api/password/forgot` - Yêu cầu reset password (gửi email thật qua Gmail SMTP)
+- `POST /api/password/reset` - Đặt lại password với token (token hết hạn sau 1 giờ)
 
 ### Upload ⭐ UPGRADED
 - `POST /api/upload/avatar` - Upload avatar với Sharp resize (400x400px)
@@ -148,6 +148,7 @@ Import các collection files từ `backend/postman/`:
 3. `advanced-features.postman_collection.json` - Test advanced features
 4. `rbac.postman_collection.json` - Test RBAC (User, Moderator, Admin)
 5. `avatar-upload.postman_collection.json` - Test upload avatar với Sharp
+6. `forgot-password.postman_collection.json` - Test forgot password & reset password với email thật ⭐ NEW
 
 Tạo **Environment** trong Postman với:
 - `base_url` = `http://localhost:3000`
@@ -216,6 +217,27 @@ Tài khoản mẫu:
 - ✅ Frontend: Preview ảnh, progress bar, file info display
 - ✅ Tự động xóa avatar cũ trên Cloudinary
 
+### Hoạt động 8: Forgot Password & Reset Password (Email thật) ⭐ NEW
+- ✅ **Gmail SMTP** - Gửi email thật qua Nodemailer
+- ✅ API `/api/password/forgot` - Tạo reset token và gửi email
+- ✅ API `/api/password/reset` - Đặt lại mật khẩu với token
+- ✅ Reset token có thời hạn 1 giờ, được hash trước khi lưu DB
+- ✅ Email template đẹp với HTML/CSS inline
+- ✅ Bảo mật: không tiết lộ email có tồn tại hay không
+- ✅ Frontend: Form forgot password với hướng dẫn chi tiết
+- ✅ Frontend: Form reset password với validation và success animation
+- ✅ Hỗ trợ dev mode (hiển thị link trong console nếu chưa cấu hình email)
+- ✅ Hướng dẫn cấu hình Gmail App Password trong `.env.example`
+
+**Cấu hình Gmail SMTP:**
+1. Bật xác thực 2 bước: https://myaccount.google.com/security
+2. Tạo App Password: https://myaccount.google.com/apppasswords
+3. Thêm vào `.env`:
+   ```
+   EMAIL_USER=your-email@gmail.com
+   EMAIL_PASS=your-app-password-16-characters
+   ```
+
 ---
 
 ## 🔒 Bảo mật
@@ -226,10 +248,12 @@ Tài khoản mẫu:
 - Advanced RBAC - Phân quyền theo vai trò (User, Moderator, Admin) và permissions
 - Kiểm tra trạng thái tài khoản (Active, Suspended, Banned)
 - Moderator không thể khóa Admin/Moderator khác
-- Reset password token có thời hạn (1 giờ)
+- Reset password token có thời hạn (1 giờ), được hash (SHA-256) trước khi lưu DB
+- Email reset password không tiết lộ thông tin user tồn tại hay không
 - Axios interceptor tự động refresh token khi hết hạn
 - Upload validation - Kiểm tra file type, size, format
 - Sharp resize - Tối ưu ảnh trước khi lưu trữ
+- Gmail SMTP với App Password (không dùng mật khẩu thật)
 - CORS được cấu hình đúng
 
 ---

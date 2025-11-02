@@ -9,6 +9,7 @@ function ResetPassword() {
   const [dangGui, setDangGui] = useState(false);
   const [token, setToken] = useState('');
   const [hienMatKhau, setHienMatKhau] = useState(false);
+  const [thanhCong, setThanhCong] = useState(false);
 
   const baseURL = useMemo(
     () => process.env.REACT_APP_API_URL || 'http://localhost:3000',
@@ -65,11 +66,12 @@ function ResetPassword() {
       
       setMatKhauMoi('');
       setXacNhanMatKhau('');
+      setThanhCong(true);
 
-      // Chuyển về trang đăng nhập sau 2 giây
+      // Chuyển về trang đăng nhập sau 3 giây
       setTimeout(() => {
         window.location.href = '/';
-      }, 2000);
+      }, 3000);
 
     } catch (error) {
       const msg = error.response?.data?.thongBao || 'Không thể đặt lại mật khẩu. Vui lòng thử lại.';
@@ -98,7 +100,22 @@ function ResetPassword() {
           </div>
         )}
 
-        {token ? (
+        {thanhCong ? (
+          <div className="reset-success">
+            <div className="success-icon">🎉</div>
+            <h3>Đặt lại mật khẩu thành công!</h3>
+            <p>Mật khẩu của bạn đã được cập nhật.</p>
+            <p className="redirect-info">
+              Đang chuyển về trang đăng nhập... <span className="spinner">⏳</span>
+            </p>
+            <button 
+              className="btn-login-now" 
+              onClick={() => window.location.href = '/'}
+            >
+              Đăng nhập ngay
+            </button>
+          </div>
+        ) : token ? (
           <form className="reset-password-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="matKhauMoi">Mật khẩu mới</label>
