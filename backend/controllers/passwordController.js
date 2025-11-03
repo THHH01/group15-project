@@ -18,9 +18,11 @@ const taoEmailTransporter = () => {
     return null;
   }
 
-  // Cấu hình Gmail SMTP
+  // Cấu hình Gmail SMTP với explicit host và port
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // Use TLS
     auth: {
       user: emailUser,
       pass: emailPass // App Password (16 ký tự, không có khoảng trắng)
@@ -28,7 +30,11 @@ const taoEmailTransporter = () => {
     // Cấu hình bổ sung cho Gmail
     tls: {
       rejectUnauthorized: false // Cho phép self-signed certificates (dev only)
-    }
+    },
+    // Tăng timeout để tránh lỗi connection timeout
+    connectionTimeout: 10000, // 10 giây
+    greetingTimeout: 10000,
+    socketTimeout: 10000
   });
 };
 
@@ -200,10 +206,20 @@ Hệ thống Quản lý - Nhóm 15
         console.error('   - Đã bật xác thực 2 bước chưa?');
       }
       
-      return res.status(500).json({ 
-        thongBao: 'Không thể gửi email. Vui lòng kiểm tra cấu hình email hoặc thử lại sau.',
-        chiTiet: emailError.message,
-        code: emailError.code
+      // Fallback: Log link ra console nếu không gửi được email
+      console.log('🔗 FALLBACK - Reset Password URL (check logs):', resetUrl);
+      console.log('📧 Email:', nguoiDung.email);
+      console.log('⏰ Hết hạn:', new Date(expiryTime).toLocaleString('vi-VN'));
+      
+      // Trả về link trong response để user có thể dùng
+      return res.status(200).json({ 
+        thongBao: 'Link reset mật khẩu đã được tạo. Do lỗi kết nối email server, vui lòng check logs hoặc liên hệ admin.',
+        devOnly: {
+          resetUrl,
+          expiresAt: expiryTime,
+          reason: 'email_send_failed',
+          error: emailError.message
+        }
       });
     }
 
