@@ -1,27 +1,36 @@
-const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const sharp = require('sharp');
 const User = require('../models/User');
 
-// Cấu hình Cloudinary
-if (process.env.CLOUDINARY_URL) {
-  const cloudinaryUrl = process.env.CLOUDINARY_URL;
-  const matches = cloudinaryUrl.match(/cloudinary:\/\/(\d+):([^@]+)@(.+)/);
+// Lazy load Cloudinary (chỉ load khi cần)
+let cloudinary = null;
+const initCloudinary = () => {
+  if (cloudinary) return cloudinary;
   
-  if (matches) {
+  cloudinary = require('cloudinary').v2;
+  
+  // Cấu hình Cloudinary
+  if (process.env.CLOUDINARY_URL) {
+    const cloudinaryUrl = process.env.CLOUDINARY_URL;
+    const matches = cloudinaryUrl.match(/cloudinary:\/\/(\d+):([^@]+)@(.+)/);
+    
+    if (matches) {
+      cloudinary.config({
+        cloud_name: matches[3],
+        api_key: matches[1],
+        api_secret: matches[2]
+      });
+    }
+  } else if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
     cloudinary.config({
-      cloud_name: matches[3],
-      api_key: matches[1],
-      api_secret: matches[2]
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
     });
   }
-} else if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-}
+  
+  return cloudinary;
+};
 
 // Cấu hình Multer (lưu file tạm trong memory)
 const storage = multer.memoryStorage();
@@ -118,32 +127,21 @@ const uploadAvatar = async (req, res) => {
     const resizedMetadata = await getImageMetadata(resizedBuffer);
     console.log('✅ Ảnh đã resize:', resizedMetadata);
 
-    // Cấu hình Cloudinary lại mỗi lần upload để đảm bảo
-    if (process.env.CLOUDINARY_URL) {
-      const cloudinaryUrl = process.env.CLOUDINARY_URL;
-      const matches = cloudinaryUrl.match(/cloudinary:\/\/(\d+):([^@]+)@(.+)/);
-      
-      if (matches) {
-        cloudinary.config({
-          cloud_name: matches[3],
-          api_key: matches[1],
-          api_secret: matches[2]
-        });
-      } else {
-        return res.status(500).json({ 
-          thongBao: 'Cấu hình Cloudinary không hợp lệ.' 
-        });
-      }
-    } else {
+    // Lazy load và cấu hình Cloudinary
+    let cloudinaryInstance;
+    try {
+      cloudinaryInstance = initCloudinary();
+    } catch (cloudinaryError) {
       return res.status(500).json({ 
-        thongBao: 'Chưa cấu hình dịch vụ upload ảnh. Vui lòng liên hệ quản trị viên.' 
+        thongBao: 'Chưa cấu hình dịch vụ upload ảnh. Vui lòng liên hệ quản trị viên.',
+        chiTiet: cloudinaryError.message
       });
     }
 
     // Upload lên Cloudinary từ buffer đã resize
     console.log('☁️  Đang upload lên Cloudinary...');
     const uploadPromise = new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
+      const uploadStream = cloudinaryInstance.uploader.upload_stream(
         {
           folder: 'user-avatars',
           public_id: `user_${req.nguoiDung.id}_${Date.now()}`,
@@ -176,7 +174,7 @@ const uploadAvatar = async (req, res) => {
           .slice(-2)
           .join('/')
           .split('.')[0];
-        await cloudinary.uploader.destroy(oldPublicId);
+        await cloudinaryInstance.uploader.destroy(oldPublicId);
         console.log('🗑️  Đã xóa avatar cũ');
       } catch (deleteError) {
         console.warn('⚠️  Không thể xóa avatar cũ:', deleteError.message);
@@ -224,6 +222,17 @@ const uploadAvatarMultiple = async (req, res) => {
       return res.status(400).json({ thongBao: 'Vui lòng chọn file ảnh.' });
     }
 
+    // Lazy load và cấu hình Cloudinary
+    let cloudinaryInstance;
+    try {
+      cloudinaryInstance = initCloudinary();
+    } catch (cloudinaryError) {
+      return res.status(500).json({ 
+        thongBao: 'Chưa cấu hình dịch vụ upload ảnh. Vui lòng liên hệ quản trị viên.',
+        chiTiet: cloudinaryError.message
+      });
+    }
+
     // Tạo 3 kích thước: thumbnail, medium, large
     const sizes = [
       { name: 'thumbnail', width: 100, height: 100 },
@@ -239,7 +248,7 @@ const uploadAvatarMultiple = async (req, res) => {
       });
 
       return new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
+        const uploadStream = cloudinaryInstance.uploader.upload_stream(
           {
             folder: `user-avatars/${size.name}`,
             public_id: `user_${req.nguoiDung.id}_${size.name}_${Date.now()}`,
