@@ -38,6 +38,8 @@ Dự án **Hệ thống quản lý người dùng** là một ứng dụng full-
 
 ### Frontend
 - **React.js** - Framework UI
+- **Redux Toolkit** - State management
+- **React Router** - Routing & navigation
 - **Axios** - HTTP client
 - **CSS** - Styling
 
@@ -269,6 +271,27 @@ Tài khoản mẫu:
   - Top users hoạt động nhiều nhất
   - UI đẹp với tabs, cards, và responsive design
 
+### Hoạt động 10: Frontend Redux & Protected Routes ⭐ NEW
+- ✅ **Redux Toolkit** - Quản lý state nâng cao
+  - Redux store với auth slice
+  - Async thunks: `dangKy`, `dangNhap`, `dangXuat`, `lamMoiToken`
+  - Tự động lưu/load tokens từ localStorage
+  - Error handling và loading states
+- ✅ **React Router** - Routing và navigation
+  - Public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`
+  - Protected routes: `/`, `/profile`, `/admin`, `/logs`
+  - Redirect tự động nếu chưa đăng nhập
+  - Redirect về trang trước sau khi login
+- ✅ **Protected Routes Component**
+  - Chặn truy cập nếu chưa đăng nhập
+  - Kiểm tra role (Admin, Moderator, User)
+  - Redirect về login hoặc home nếu không đủ quyền
+- ✅ **Refactor Components**
+  - Tách LoginPage, SignupPage, DashboardPage
+  - Sử dụng Redux hooks (`useSelector`, `useDispatch`)
+  - Loại bỏ prop drilling
+  - Code sạch hơn và dễ maintain
+
 ---
 
 ## 🔒 Bảo mật
@@ -287,6 +310,8 @@ Tài khoản mẫu:
 - Gmail SMTP với App Password (không dùng mật khẩu thật)
 - **Rate Limiting** - Chống brute force login, spam signup, spam forgot password
 - **Activity Logging** - Ghi lại mọi hoạt động để audit và phát hiện bất thường
+- **Protected Routes** - Chặn truy cập trang nếu chưa đăng nhập hoặc không đủ quyền
+- **Redux State Management** - Quản lý auth state an toàn và tập trung
 - CORS được cấu hình đúng
 
 ---
